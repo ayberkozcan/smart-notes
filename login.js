@@ -14,6 +14,7 @@ function checkInputsForLogin(inputs) {
     if (inputs[0].value == "a@a.com" && inputs[1].value == "asd123" && inputs[2].value == "asd1234") {
         loginSuccess = true;
         console.log("Login Successful");
+        window.location.href = "homepage.html";
     } else {
         loginSuccess = false;
         console.log("Login Unsuccessful");
@@ -60,7 +61,7 @@ function checkLength(input, min, max) {
 }
 
 form.addEventListener("submit", function(e) {
-    e.preventDefault(); // delete later
+    e.preventDefault();
 
     if (loginStatus == "login") { // login
         checkInputsForLogin([email, username, password]);
