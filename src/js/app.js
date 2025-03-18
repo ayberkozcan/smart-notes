@@ -1,0 +1,63 @@
+const tbody = document.getElementById("note-list");
+const tbodyHidden = document.getElementById("hidden-note-list");
+const hiddenNotesBtn = document.getElementById("hiddenNotesBtn");
+
+let hiddenNotesShow = false;
+
+// Temporary (need verification using backend)
+
+let notes = [
+    { title: "My First Note", category: "Personal", date: "17.03.2025" },
+    { title: "My Second Note", category: "Work", date: "17.03.2025" },
+    { title: "My Third Note", category: "Ideas", date: "18.03.2025" }
+];
+
+let hiddenNotes = [
+    { title: "My Hidden Note", category: "Personal", date: "17.03.2025" }
+];
+
+function renderNotes() {
+    tbody.innerHTML = "";
+    let notesToDisplay = hiddenNotesShow ? hiddenNotes : notes;
+
+    for (let i = 0; i < notesToDisplay.length; i++) {
+        let item = notesToDisplay[i];        
+        const row = document.createElement("tr");
+    
+        row.innerHTML = `
+            <td>${item.title}</td>
+            <td>${item.category}</td>
+            <td>${item.date}</td>
+            <td class="d-flex justify-content-center gap-3">
+                <button type="button" class="btn btn-info btn-sm">Edit</button>
+                <button type="button" class="btn btn-danger btn-sm">Delete</button>
+            </td>
+        `;
+    
+        tbody.appendChild(row);
+    }
+}
+
+renderNotes();
+
+hiddenNotesBtn.addEventListener("click", function(e) {
+    if (localStorage.getItem('isVerified') === 'true') {
+        hiddenNotesShow = !hiddenNotesShow;
+
+        if (hiddenNotesShow) {
+            hiddenNotesBtn.innerText = "View All Notes";
+            hiddenNotesBtn.className = "btn btn-outline-success";
+        } else {
+            hiddenNotesBtn.innerText = "View Hidden Notes";
+            hiddenNotesBtn.className = "btn btn-outline-danger";
+        }
+    
+        renderNotes();
+    } else {
+        window.location.href = "hiddennotesverification.html";
+    }
+});
+
+document.getElementById("createNoteBtn").addEventListener("click", function(e) {
+    window.location.href = "createnotepage.html";
+});

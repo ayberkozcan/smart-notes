@@ -3,6 +3,8 @@ const title = document.getElementById("title");
 const content = document.getElementById("content");
 const category = document.getElementById("category");
 const checkbox = document.getElementById("checkbox");
+const contentLength = document.getElementById("content-length");
+const contentWords = document.getElementById("content-words");
 
 let noteSuccess = false;
 
@@ -27,6 +29,15 @@ function checkRequired(title) {
     }
 }
 
+content.addEventListener("input", function(e) {
+    let words = content.value.trim().split(/\s+/);
+    let charCount = content.value.length;
+    let wordCount = words.length;
+
+    contentLength.innerHTML = `${charCount} characters`;
+    contentWords.innerHTML = `${wordCount} words`;
+});
+
 form.addEventListener("submit", function(e) {
     e.preventDefault();
 
@@ -42,4 +53,4 @@ form.addEventListener("submit", function(e) {
 
 document.getElementById("gobackBtn").addEventListener("click", function(e) {
     window.location.href = "homepage.html";
-})
+});

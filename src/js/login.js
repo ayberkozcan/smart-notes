@@ -19,7 +19,7 @@ function checkInputsForLogin(inputs) {
         loginSuccess = false;
         console.log("Login Unsuccessful");
     }
-}
+} // Move to backend
 
 function error(input, message) {
     input.className = "form-control is-invalid";
