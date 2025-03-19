@@ -1,8 +1,18 @@
+const table = document.getElementById("notesTable");
 const tbody = document.getElementById("note-list");
 const tbodyHidden = document.getElementById("hidden-note-list");
 const hiddenNotesBtn = document.getElementById("hiddenNotesBtn");
+const settingsBtn = document.getElementById("settingsBtn");
 
 let hiddenNotesShow = false;
+
+if (localStorage.getItem("theme") === "dark") {
+    table.classList.add("table-dark");
+    hiddenNotesBtn.classList = "btn btn-danger";
+    settingsBtn.classList = "btn btn-info";
+} else {
+    table.classList.remove("table-dark");
+}
 
 // Temporary (need verification using backend)
 
@@ -60,4 +70,8 @@ hiddenNotesBtn.addEventListener("click", function(e) {
 
 document.getElementById("createNoteBtn").addEventListener("click", function(e) {
     window.location.href = "createnotepage.html";
+});
+
+document.getElementById("settingsBtn").addEventListener("click", function(e) {
+    window.location.href = "settings.html";
 });
