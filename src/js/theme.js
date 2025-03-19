@@ -5,10 +5,8 @@ if (localStorage.getItem("theme") === "dark") {
 }
 
 themeToggleBtn.addEventListener("click", () => {
-    console.log("asd");
     document.body.classList.toggle("dark-mode");
 
-    // Yeni temayı localStorage'a kaydet
     if (document.body.classList.contains("dark-mode")) {
         localStorage.setItem("theme", "dark");
     } else {

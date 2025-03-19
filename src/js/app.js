@@ -39,11 +39,28 @@ function renderNotes() {
             <td>${item.category}</td>
             <td>${item.date}</td>
             <td class="d-flex justify-content-center gap-3">
-                <button type="button" class="btn btn-info btn-sm">Edit</button>
-                <button type="button" class="btn btn-danger btn-sm">Delete</button>
+                <button type="button" class="btn btn-info btn-sm">
+                    <i class="fa-solid fa-pen"></i>
+                </button>
+                <button type="button" class="btn btn-danger btn-sm deleteNoteBtn">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
             </td>
         `;
     
+        const deleteNoteBtn = row.querySelector(".deleteNoteBtn");
+        deleteNoteBtn.addEventListener("click", function(e) {
+            const confirmation = window.confirm("Are you sure you want to delete this note?");
+                
+            if (confirmation) {
+                notes.splice(i, 1);
+                renderNotes();
+                alert("Note deleted.");
+            } else {
+                
+            }
+        });
+
         tbody.appendChild(row);
     }
 }
@@ -72,6 +89,7 @@ document.getElementById("createNoteBtn").addEventListener("click", function(e) {
     window.location.href = "createnotepage.html";
 });
 
-document.getElementById("settingsBtn").addEventListener("click", function(e) {
+settingsBtn.addEventListener("click", function(e) {
     window.location.href = "settings.html";
 });
+

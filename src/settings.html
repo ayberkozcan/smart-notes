@@ -11,8 +11,28 @@
 </head>
 <body>
 
-    <button id="themeToggle">🌙 / ☀️</button>
-    <button id="gobackBtn">Go Back</button>
+    <div class="container mt-3">
+        <h1>Smart Notes</h1>
+        <hr>
+        <div class="row mt-5 justify-content-center">
+            <div class="cards" style="width: 50%;">
+                <h4 style="text-align: center; padding: 15px;">Settings</h4>
+                <div class="card-button">
+                    <button type="button" class="btn btn-dark" id="themeToggle">Switch to Dark Theme</button>
+                </div>
+                <div class="card-button">
+                    <button type="button" class="btn btn-outline-success" id="manageCategoriesBtn">Manage Categories</button>
+                </div>
+                <div class="card-button">
+                    <button type="button" class="btn btn-outline-secondary" id="gobackBtn">Go Back</button>
+                </div>
+                <hr>
+                <div class="card-button">
+                    <button type="button" class="btn btn-danger" id="deleteDataBtn">Delete All Data</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script src="js/theme.js"></script>
     <script src="js/settings.js"></script>
