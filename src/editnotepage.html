@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    
+    <title>Smart Notes - Edit Note</title>
+    <style>
+        .hr-top {
+            margin-bottom: 75px;
+        }
+        .note-control {
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .info {
+            height: 100%;
+            width: 50%;
+            background-color: rgba(255, 255, 210, 0.822);
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+        }
+        .preview {
+            height: 100%;
+            background-color: rgba(192, 192, 192, 0.822);
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+        }
+        .preview-box {
+            border: 1px solid #ccc;
+            padding: 10px;
+            height: 400px;
+            white-space: pre-wrap;
+            overflow-wrap: break-word;
+            background-color: #f8f9fa;
+            overflow-y: auto;
+        }
+        option.option-yellow {
+            background-color: #faffcc;
+        }
+    
+        option.option-gray {
+            background-color: rgba(192, 192, 192, 0.822);
+        }
+    
+        option.option-blue {
+            background-color: #a1afff;
+        }
+    
+        option.option-red {
+            background-color: #ffb3b3;
+        }
+    
+        option.option-pink {
+            background-color: #ffb0ff;
+        }
+    </style>
+</head>
+<body>
+    
+    <div class="container mt-3">
+        <h1>Smart Notes</h1>
+        <hr class="hr-top">
+        <div class="row mt-5">
+            <div class="col-md-4">
+                <form id="form">
+                    <div class="form-group">
+                        <label for="title">Title</label>
+                        <input type="text" class="note-control" id="title" maxlength="50">
+                        <div></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="content">Content</label>
+                        <textarea class="note-control" id="content" rows="10" style="resize: none;" maxlength="600"></textarea>
+                    </div>
+                    
+                    <div class="form-group d-flex justify-content-between">
+                        <p id="content-length">0 characters</p>
+                        <p id="content-words">0 words</p>
+                    </div>                    
+
+                    <div class="form-group d-flex justify-content-between">
+                        <div class="form-category">
+                            <label for="category">Category</label>
+                            <select class="note-control" id="category">
+                                <option selected>None</option>
+                                <option value="1">To-Do</option>
+                                <option value="2">Ideas</option>
+                                <option value="3">Work</option>
+                                <option value="4">Personal</option>
+                                <option value="5">Friends</option>
+                            </select>
+                        </div>
+                        <div class="form-color">
+                            <label for="color">Color</label>
+                            <select class="note-control" id="color">
+                                <option value="1" class="option-gray" selected>Gray</option>
+                                <option value="2" class="option-yellow">Yellow</option>
+                                <option value="3" class="option-blue">Blue</option>
+                                <option value="4" class="option-red">Red</option>
+                                <option value="5" class="option-pink">Pink</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="checkbox">
+                            <label for="checkbox" class="form-check-label">
+                                Private
+                            </label>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="buttons d-flex justify-content-between">
+                        <button type="submit" class="btn btn-success">Edit</button>
+                        <button type="button" class="btn btn-secondary" id="gobackBtn">Go Back</button>
+                    </div>
+                </form>
+            </div>
+            <div class="col-md-4">
+                <div class="preview">
+                    <div class="form-group">
+                        <p id="preview-title">...</p>
+                    </div>
+                    <hr>
+                    <div class="form-group">
+                        <div id="preview-content" class="preview-box">...</div>
+                    </div>           
+                    
+                    <div class="form-group d-flex justify-content-between">
+                        <p id="preview-category">None</p>
+                        <label id="preview-hidden">
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="info">
+                    <h5>Tips & Infos</h5>
+                    <hr>
+                    <div class="info-fields">
+                        <p class="fst-italic">You can add a title, content, category, and even hide the note</p>
+                    </div>
+                    <hr>
+                    <div class="total-note">
+                        <p class="fst-italic">You have x notes</p>
+                    </div>
+                    <hr>
+                    <div class="favourite-category">
+                        <p class="fst-italic">Your favourite category is ...</p>
+                    </div>
+                </div>
+            </div>            
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
+    <script src="js/theme.js"></script>
+    <script src="js/editnote.js"></script>
+
+</body>
+</html>

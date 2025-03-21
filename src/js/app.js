@@ -39,7 +39,7 @@ function renderNotes() {
             <td>${item.category}</td>
             <td>${item.date}</td>
             <td class="d-flex justify-content-center gap-3">
-                <button type="button" class="btn btn-info btn-sm">
+                <button type="button" class="btn btn-info btn-sm editNoteBtn">
                     <i class="fa-solid fa-pen"></i>
                 </button>
                 <button type="button" class="btn btn-danger btn-sm deleteNoteBtn">
@@ -59,6 +59,11 @@ function renderNotes() {
             } else {
                 
             }
+        });
+
+        const editNoteBtn = row.querySelector(".editNoteBtn");
+        editNoteBtn.addEventListener("click", function (e) {
+            window.location.href = "editnotepage.html";
         });
 
         tbody.appendChild(row);
