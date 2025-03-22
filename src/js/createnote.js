@@ -1,3 +1,5 @@
+// const { response } = require("express");
+
 const form = document.getElementById("form");
 const title = document.getElementById("title");
 const content = document.getElementById("content");
@@ -91,10 +93,27 @@ form.addEventListener("submit", function(e) {
     checkRequired(title);
 
     if (noteSuccess) {
-        let date = new Date().toLocaleDateString();
-        let time = new Date().toLocaleTimeString();
-        console.log(date);
-        console.log(time);
+        const noteData = {
+            title: title.value,
+            content: content.value,
+            category: category.value,
+            color: color.value,
+            private: checkbox.checked
+        };
+
+        fetch("https://localhost:3000/add-note", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(noteData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message);
+            window.location.href("homepage.html");
+        })
+        .catch(error => console.error("Error:", error));
     }
 });
 
