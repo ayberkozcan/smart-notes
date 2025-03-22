@@ -1,6 +1,7 @@
-const express = require("express");
-const sqlite3 = require("sqlite3").verbose();
-const bodyParser = require("body-parser");
+import express from 'express';
+import sqlite3 from 'sqlite3';
+import bodyParser from 'body-parser';
+import cors from 'cors';
 
 const app = express();
 const port = 3000;
@@ -25,18 +26,19 @@ db.run(`
     )    
 `);
 
+app.use(cors());
 app.use(bodyParser.json());
 
 app.post("/add-note", (req, res) => {
-    const { title, content, category, color, private } = req.body;
+    const { title, content, category, color, isPrivate } = req.body;
     const date = new Date().toLocaleString();
 
     db.run(
         "INSERT INTO notes (title, content, category, color, private, date) VALUES (?, ?, ?, ?, ?, ?)",
-        [title, content, category, color, private, date ? 1 : 0, date],
+        [title, content, category, color, isPrivate ? 1 : 0, date],
         function (err) {
             if (err) {
-                return res.status(500).json({error: err.message});
+                return res.status(500).json({ error: err.message });
             }
             res.json({ message: "Note added successfully", id: this.lastID });
         }

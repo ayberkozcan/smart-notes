@@ -1,5 +1,3 @@
-// const { response } = require("express");
-
 const form = document.getElementById("form");
 const title = document.getElementById("title");
 const content = document.getElementById("content");
@@ -101,19 +99,27 @@ form.addEventListener("submit", function(e) {
             private: checkbox.checked
         };
 
-        fetch("https://localhost:3000/add-note", {
+        fetch("http://localhost:3000/add-note", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify(noteData)
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("An error occurred while adding the note!");
+            }
+            return response.json();
+        })
         .then(data => {
             alert(data.message);
-            window.location.href("homepage.html");
+            window.location.href = "homepage.html";
         })
-        .catch(error => console.error("Error:", error));
+        .catch(error => {
+            console.error("Error:", error);
+            alert(error.message);
+        });
     }
 });
 
