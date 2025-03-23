@@ -29,6 +29,25 @@ db.run(`
 app.use(cors());
 app.use(bodyParser.json());
 
+app.get("/notes", (req, res) => {
+    db.all("SELECT * FROM notes", [], (err, rows) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        res.json(rows);
+    });
+});
+
+app.delete("/delete-note/:id", (req, res) => {
+    const { id } = req.params;
+    db.run("DELETE FROM notes WHERE id = ?", [id], function (err) {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        res.json({ message: "Note deleted successfully. "});
+    });
+});
+
 app.post("/add-note", (req, res) => {
     const { title, content, category, color, isPrivate } = req.body;
     const date = new Date().toLocaleString();

@@ -28,49 +28,53 @@ let hiddenNotes = [
 
 function renderNotes() {
     tbody.innerHTML = "";
-    let notesToDisplay = hiddenNotesShow ? hiddenNotes : notes;
 
-    for (let i = 0; i < notesToDisplay.length; i++) {
-        let item = notesToDisplay[i];        
-        const row = document.createElement("tr");
-    
-        row.innerHTML = `
-            <td>${item.title}</td>
-            <td>${item.category}</td>
-            <td>${item.date}</td>
-            <td class="d-flex justify-content-center gap-3">
-                <button type="button" class="btn btn-info btn-sm editNoteBtn">
-                    <i class="fa-solid fa-pen"></i>
-                </button>
-                <button type="button" class="btn btn-danger btn-sm deleteNoteBtn">
-                    <i class="fa-solid fa-trash"></i>
-                </button>
-            </td>
-        `;
-    
-        const deleteNoteBtn = row.querySelector(".deleteNoteBtn");
-        deleteNoteBtn.addEventListener("click", function(e) {
-            const confirmation = window.confirm("Are you sure you want to delete this note?");
+    fetch("http://localhost:3000/notes")
+        .then(response => response.json())
+        .then(notes => {
+            notes.forEach(item => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${item.title}</td>
+                    <td>${item.category}</td>
+                    <td>${item.date}</td>
+                    <td class="d-flex justify-content-center gap-3">
+                        <button type="button" class="btn btn-info btn-sm editNoteBtn" data-id="${item.id}">
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
+                        <button type="button" class="btn btn-danger btn-sm deleteNoteBtn" data-id="${item.id}">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </td>
+                `;
                 
-            if (confirmation) {
-                notes.splice(i, 1);
-                renderNotes();
-                alert("Note deleted.");
-            } else {
+                const deleteNoteBtn = row.querySelector(".deleteNoteBtn");
+                deleteNoteBtn.addEventListener("click", function() {
+                    const confirmation = window.confirm("Are you sure you want to delete this note?");
+                    if (confirmation) {
+                        fetch(`http://localhost:3000/delete-note/${item.id}`, { method: "DELETE" })
+                            .then(response => response.json())
+                            .then(() => {
+                                alert("Note deleted.");
+                                renderNotes();
+                            })
+                            .catch(err => console.error("Error:", err));
+                    }
+                });
                 
-            }
-        });
-
-        const editNoteBtn = row.querySelector(".editNoteBtn");
-        editNoteBtn.addEventListener("click", function (e) {
-            window.location.href = "editnotepage.html";
-        });
-
-        tbody.appendChild(row);
-    }
+                const editNoteBtn = row.querySelector(".editNoteBtn");
+                editNoteBtn.addEventListener("click", function() {
+                    window.location.href = `editnotepage.html?id=${item.id}`;
+                });
+                
+                tbody.appendChild(row);
+            });
+        })
+        .catch(err => console.error("Error fetching notes:", err));
 }
 
 renderNotes();
+
 
 hiddenNotesBtn.addEventListener("click", function(e) {
     if (localStorage.getItem('isVerified') === 'true') {
