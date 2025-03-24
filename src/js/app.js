@@ -16,12 +16,6 @@ if (localStorage.getItem("theme") === "dark") {
 
 // Temporary (need verification using backend)
 
-let notes = [
-    { title: "My First Note", category: "Personal", date: "17.03.2025" },
-    { title: "My Second Note", category: "Work", date: "17.03.2025" },
-    { title: "My Third Note", category: "Ideas", date: "18.03.2025" }
-];
-
 let hiddenNotes = [
     { title: "My Hidden Note", category: "Personal", date: "17.03.2025" }
 ];
@@ -75,7 +69,6 @@ function renderNotes() {
 
 renderNotes();
 
-
 hiddenNotesBtn.addEventListener("click", function(e) {
     if (localStorage.getItem('isVerified') === 'true') {
         hiddenNotesShow = !hiddenNotesShow;
@@ -101,4 +94,3 @@ document.getElementById("createNoteBtn").addEventListener("click", function(e) {
 settingsBtn.addEventListener("click", function(e) {
     window.location.href = "settings.html";
 });
-

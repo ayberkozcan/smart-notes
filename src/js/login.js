@@ -11,15 +11,33 @@ let loginSuccess = false;
 let inputs = [email, username, password];
 
 function checkInputsForLogin(inputs) {
-    if (inputs[0].value == "a@a.com" && inputs[1].value == "asd123" && inputs[2].value == "asd1234") {
-        loginSuccess = true;
-        console.log("Login Successful");
-        window.location.href = "homepage.html";
-    } else {
-        loginSuccess = false;
-        console.log("Login Unsuccessful");
-    }
-} // Move to backend
+    const emailValue = email.value.trim();
+    const usernameValue = username.value.trim();
+    const passwordValue = password.value.trim();
+
+    fetch(`http://localhost:3000/login?email=${encodeURIComponent(emailValue)}&username=${encodeURIComponent(usernameValue)}&password=${encodeURIComponent(passwordValue)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                loginSuccess = true;
+                alert("Login Successfull!");
+                window.location.href = "homepage.html";
+            } else {
+                loginSuccess = false;
+                alert("Invalid Email, Username or Password!");
+            }
+        })
+        .catch(err => console.error("Error: ", err))
+
+    // if (inputs[0].value == "a@a.com" && inputs[1].value == "asd123" && inputs[2].value == "asd1234") {
+    //     loginSuccess = true;
+    //     console.log("Login Successful");
+    //     window.location.href = "homepage.html";
+    // } else {
+    //     loginSuccess = false;
+    //     console.log("Login Unsuccessful");
+    // }
+}
 
 function error(input, message) {
     input.className = "form-control is-invalid";

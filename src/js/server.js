@@ -26,8 +26,37 @@ db.run(`
     )    
 `);
 
+db.run(`
+    CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        email TEXT NOT NULL UNIQUE,
+        username TEXT NOT NULL UNIQUE,
+        password TEXT NOT NULL,
+        created_date TEXT DEFAULT (datetime('now'))
+    )
+`);
+
 app.use(cors());
 app.use(bodyParser.json());
+
+app.get("/login", (req, res) => {
+    const { email, username, password } = req.query;
+    
+    db.all(
+        "SELECT * FROM users WHERE email = ? AND username = ? AND password = ?", 
+        [email, username, password], 
+        (err, rows) => {
+            if (err) {
+                return res.status(500).json({ error: err.message });
+            }
+            if (rows.length > 0) {
+                res.json({ success: true, message: "User found" });
+            } else {
+                res.status(401).json({ success: false, message: "Invalid credentials" });
+            }
+        }
+    );
+});
 
 app.get("/notes", (req, res) => {
     db.all("SELECT * FROM notes", [], (err, rows) => {
