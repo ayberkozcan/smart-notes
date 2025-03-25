@@ -13,7 +13,40 @@ const previewContent = document.getElementById("preview-content");
 const previewCategory = document.getElementById("preview-category");
 const previewHidden = document.getElementById("preview-hidden");
 
+const urlParams = new URLSearchParams(window.location.search);
+const noteId = urlParams.get("id");
+
 let noteSuccess = false;
+
+function getNote() {
+    const id = noteId;
+
+    fetch(`http://localhost:3000/edit-note/${id}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.length > 0) {
+                const note = data[0];
+                console.log(note);
+
+                title.value = note.title;
+                previewTitle.innerHTML = title.value.trim() === "" ? "..." : title.value;
+
+                content.value = note.content;
+                loadContent();
+
+                category.options[category.selectedIndex].text = note.category;
+                checkbox.checked = note.private ? true : false;
+                previewHidden.innerHTML = checkbox.checked ? `<i class="fa-solid fa-lock" style="padding: 5px;"></i>` : ``;
+                color.value = note.color;
+                changeColor(color.options[color.selectedIndex].text);
+            } else {
+                console.log("Note cannot be found.");
+            }
+        })
+        .catch(error => console.error("Error: ", error));
+}
+
+getNote();
 
 function error(input, message) {
     input.className = "form-control is-invalid";
@@ -41,6 +74,10 @@ title.addEventListener("input", function () {
 });
 
 content.addEventListener("input", function () {
+    loadContent();
+});
+
+function loadContent() {
     let words = content.value.trim().split(/\s+/).filter(word => word.length > 0);
     let charCount = content.value.length;
     let wordCount = words.length;
@@ -49,7 +86,7 @@ content.addEventListener("input", function () {
     contentWords.innerHTML = `${wordCount} words`;
 
     previewContent.innerHTML = content.value.trim() === "" ? "..." : content.value;
-});
+}
 
 category.addEventListener("change", function () {
     let selectedText = category.options[category.selectedIndex].text;
@@ -58,7 +95,10 @@ category.addEventListener("change", function () {
 
 color.addEventListener("change", function () {
     let selectedColor = color.options[color.selectedIndex].text;
+    changeColor(selectedColor);
+});
 
+function changeColor(selectedColor) {
     switch (selectedColor) {
         case "Gray":
             previewBox.style.backgroundColor = "rgba(192, 192, 192, 0.822)";
@@ -79,7 +119,7 @@ color.addEventListener("change", function () {
             previewBox.style.backgroundColor = "#ffffff";
             break;
     }
-});
+}
 
 checkbox.addEventListener("change", function () {
     previewHidden.innerHTML = checkbox.checked ? `<i class="fa-solid fa-lock" style="padding: 5px;"></i>` : ``;

@@ -67,6 +67,16 @@ app.get("/notes", (req, res) => {
     });
 });
 
+app.get("/edit-note/:id", (req, res) => {
+    const { id } = req.params;
+    db.all("SELECT * FROM notes WHERE id = ?", [id], function (err, rows) {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        res.json(rows);
+    });
+});
+
 app.delete("/delete-note/:id", (req, res) => {
     const { id } = req.params;
     db.run("DELETE FROM notes WHERE id = ?", [id], function (err) {
