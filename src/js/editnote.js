@@ -131,10 +131,36 @@ form.addEventListener("submit", function(e) {
     checkRequired(title);
 
     if (noteSuccess) {
-        let date = new Date().toLocaleDateString();
-        let time = new Date().toLocaleTimeString();
-        console.log(date);
-        console.log(time);
+        const noteData = {
+            id: noteId,
+            title: title.value,
+            content: content.value,
+            category: category.value,
+            color: color.value,
+            isPrivate: checkbox.checked
+        };
+
+        fetch("http://localhost:3000/edit-note-submit", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(noteData)
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("An error occured while updating the note!");
+            }
+            return response.json();
+        })
+        .then(data => {
+            alert(data.message);
+            window.location.href = "homepage.html";
+        })
+        .catch(error => {
+            console.error("Error: ", error);
+            alert(error.message);
+        });
     }
 });
 

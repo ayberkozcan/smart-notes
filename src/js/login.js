@@ -7,6 +7,7 @@ let header = document.querySelector(".card-header").innerHTML;
 
 let loginStatus = "login";
 let loginSuccess = false;
+let signupSuccessCounter = 0;
 
 let inputs = [email, username, password];
 
@@ -55,6 +56,7 @@ function checkEmail(input) {
     
     if (re.test(input.value)) {
         success(input);
+        signupSuccessCounter++;
     } else {
         error(input, 'Invalid Email!');
     }
@@ -66,6 +68,7 @@ function checkRequired(inputs) {
             error(input, `${input.id} is required.`);
         } else {
             success(input);
+            signupSuccessCounter++;
         }
     });
 }
@@ -75,6 +78,7 @@ function checkLength(input, min, max) {
         error(input, `${input.id} must be ${min} - ${max} characters long!`);
     } else {
         success(input);
+        signupSuccessCounter++;
     }
 }
 
@@ -88,6 +92,36 @@ form.addEventListener("submit", function(e) {
         checkEmail(email);
         checkLength(username, 5, 12);
         checkLength(password, 5, 12);
+
+        if (signupSuccessCounter == 6) {
+            const userData = {
+                email: email.value.trim(),
+                username: username.value.trim(),
+                password: password.value.trim()
+            };
+    
+            fetch("http://localhost:3000/signup", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(userData)
+            })
+            .then(response => response.json().then(data => ({ status: response.status, body: data })))
+            .then(({ status, body }) => {
+                if (status !== 200) {
+                    throw new Error(body.error || "An error occurred while adding the user!");
+                }
+                alert(body.message);
+                window.location.href = "homepage.html";
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                alert(error.message);
+            });            
+        }
+
+        signupSuccessCounter = 0;
     }
 });
 

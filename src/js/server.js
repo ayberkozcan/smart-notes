@@ -36,8 +36,38 @@ db.run(`
     )
 `);
 
+app.use(express.json());
 app.use(cors());
-app.use(bodyParser.json());
+app.use(bodyParser.json()); // delete
+
+app.post("/signup", (req, res) => {
+    const { email, username, password } = req.body;
+    const date = new Date().toLocaleString();
+
+    db.get(
+        "SELECT * FROM users WHERE email = ? AND username = ?",
+        [email, username],
+        (err, row) => {
+            if (err) {
+                return res.status(500).json({ error: "Database error: " + err.message });
+            }
+            if (row) {
+                return res.status(400).json({ error: "Email or username already exists!" });
+            }
+
+            db.run(
+                "INSERT INTO users (email, username, password, created_date) VALUES (?, ?, ?, ?)",
+                [email, username, password, date],
+                function (err) {
+                    if (err) {
+                        return res.status(500).json({ error: err.message });
+                    }
+                    res.json({ message: "User added successfully", id: this.lastID });
+                }
+            );
+        }
+    );
+});
 
 app.get("/login", (req, res) => {
     const { email, username, password } = req.query;
@@ -77,6 +107,22 @@ app.get("/edit-note/:id", (req, res) => {
     });
 });
 
+app.post("/edit-note-submit", (req, res) => {
+    const { id, title, content, category, color, isPrivate } = req.body;
+    const date = new Date().toLocaleString();
+
+    db.run(
+        "UPDATE notes SET title = ?, content = ?, category = ?, color = ?, private = ?, date = ? WHERE id = ?", 
+        [title, content, category, color, isPrivate, date, id],
+        function (err) {
+            if (err) {
+                return res.status(500).json({ error: err.message });
+            }
+            res.json({ message: "Note updated successfully", id: id });
+        }
+    );
+});
+
 app.delete("/delete-note/:id", (req, res) => {
     const { id } = req.params;
     db.run("DELETE FROM notes WHERE id = ?", [id], function (err) {
@@ -104,5 +150,5 @@ app.post("/add-note", (req, res) => {
 });
 
 app.listen(port, () => {
-    console.log("Server is running on http://localhost:${port}");
+    console.log(`Server is running on http://localhost:${port}`);
 });
