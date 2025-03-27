@@ -38,7 +38,7 @@ th:last-child {
 }
 
 .dark-mode {
-    --bg-color: #121212;
+    --bg-color: #1a1a1a;
     --text-color: #ffffff;
 }
 

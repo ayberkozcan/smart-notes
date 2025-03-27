@@ -29,15 +29,6 @@ function checkInputsForLogin(inputs) {
             }
         })
         .catch(err => console.error("Error: ", err))
-
-    // if (inputs[0].value == "a@a.com" && inputs[1].value == "asd123" && inputs[2].value == "asd1234") {
-    //     loginSuccess = true;
-    //     console.log("Login Successful");
-    //     window.location.href = "homepage.html";
-    // } else {
-    //     loginSuccess = false;
-    //     console.log("Login Unsuccessful");
-    // }
 }
 
 function error(input, message) {
@@ -86,6 +77,8 @@ form.addEventListener("submit", function(e) {
     e.preventDefault();
 
     if (loginStatus == "login") { // login
+        checkRequired([email, username, password]);
+        checkEmail(email);
         checkInputsForLogin([email, username, password]);
     } else { // sign up
         checkRequired([email, username, password]);
@@ -130,9 +123,17 @@ document.getElementById("signupBtn").addEventListener("click", function(e) {
     
     if (loginStatus == "login") {
         loginStatus = "signup";
+
+        inputs.forEach(function(input) {
+            input.className = "form-control";
+            const div = input.nextElementSibling;
+            div.innerText = "";
+            div.className = "";
+        });
+
         checkBox.checked = false;
         
-        document.querySelector(".card-header").innerHTML = "Sign Up";
+        document.querySelector(".text-center").innerHTML = "Sign Up";
         
         document.getElementById("email").value = "";
         document.getElementById("username").value = "";
@@ -151,12 +152,22 @@ document.getElementById("signupBtn").addEventListener("click", function(e) {
 
         checkBox.checked = false;
         
-        document.querySelector(".card-header").innerHTML = "Login";
+        document.querySelector(".text-center").innerHTML = "Login";
         
         document.getElementById("email").value = "";
         document.getElementById("username").value = "";
         document.getElementById("password").value = "";
 
         document.getElementById("signupBtn").innerHTML = "Sign Up";
+    }
+});
+
+document.getElementById("themeToggle").addEventListener("click", function (e) {
+    if (localStorage.getItem("theme") === "light") {
+        document.getElementById("themeToggle").innerText = "🌙";
+        document.getElementById("themeToggle").classList.replace("btn-light", "btn-dark");
+    } else {
+        document.getElementById("themeToggle").innerText = "🌞";
+        document.getElementById("themeToggle").classList.replace("btn-dark", "btn-light");
     }
 });
