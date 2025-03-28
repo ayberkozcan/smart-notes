@@ -16,20 +16,38 @@ function checkInputsForLogin(inputs) {
     const usernameValue = username.value.trim();
     const passwordValue = password.value.trim();
 
-    fetch(`http://localhost:3000/login?email=${encodeURIComponent(emailValue)}&username=${encodeURIComponent(usernameValue)}&password=${encodeURIComponent(passwordValue)}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                loginSuccess = true;
-                alert("Login Successfull!");
-                window.location.href = "homepage.html";
-            } else {
-                loginSuccess = false;
-                alert("Invalid Email, Username or Password!");
-            }
+    fetch('http://localhost:3000/login', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            email: emailValue,
+            username: usernameValue,
+            password: passwordValue
         })
-        .catch(err => console.error("Error: ", err))
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.text().then(text => { // Hata mesajını görmek için
+                throw new Error(text);
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            loginSuccess = true;
+            alert("Login Successful!");
+            window.location.href = "homepage.html";
+        } else {
+            loginSuccess = false;
+            alert("Invalid Email, Username or Password!");
+        }
+    })
+    .catch(err => console.error("Error: ", err));
 }
+
 
 function error(input, message) {
     input.className = "form-control is-invalid";
