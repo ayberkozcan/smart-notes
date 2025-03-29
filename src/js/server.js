@@ -162,6 +162,28 @@ app.post("/add-note", (req, res) => {
     );
 });
 
+app.get("/categories", (req, res) => {
+    const id = req.session?.user_id;
+    if (!id) return res.status(401).json({ error: "Unauthorized" });
+
+    db.get("SELECT categories FROM users WHERE id = ?", [id], (err, row) => {
+        if (err) {
+            return res.status(500).json({ error: "Database error: " + err.message });
+        }
+        
+        let categories = [];
+        if (row?.categories) {
+            try {
+                categories = JSON.parse(row.categories);
+            } catch {
+                categories = row.categories.split(",");
+            }
+        }
+
+        res.json(categories);
+    });
+});
+
 app.post("/delete-category", (req, res) => {
     const {user_id, category} = req.body;
     

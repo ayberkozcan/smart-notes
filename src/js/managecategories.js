@@ -9,10 +9,10 @@ document.getElementById("gobackBtn").addEventListener("click", function (e) {
 function renderCategories() {
     categoryCards.innerHTML = "";
 
-    fetch("http://localhost:3000/managecategories")
+    fetch("http://localhost:3000/categories")
         .then(response => response.json())
         .then(categories => {
-            categories.forEach(item => {
+            categories.forEach((item, i) => {
                 const category = document.createElement("div");
 
                 category.innerHTML = `
@@ -27,8 +27,13 @@ function renderCategories() {
                 editCategoryBtn.addEventListener("click", function () {
                     let newName = prompt("Enter new category name:", item);
                     if (newName && newName.trim() !== "") {
-                        categories[i] = newName.trim();
-                        renderCategories();
+                        fetch(`http://localhost:3000/categories/${i}`, {
+                            method: "PUT",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ newName: newName.trim() })
+                        })
+                        .then(() => renderCategories())
+                        .catch(err => console.error("Error updating category:", err));
                     }
                 });
 
@@ -38,9 +43,9 @@ function renderCategories() {
                     const confirmation = window.confirm("Are you sure you want to delete this category?");
                     
                     if (confirmation) {
-                        categories.splice(i, 1);
-                        renderCategories();
-                        alert("Category deleted.");
+                        fetch(`http://localhost:3000/categories/${i}`, { method: "DELETE" })
+                        .then(() => renderCategories())
+                        .catch(err => console.error("Error deleting category:", err));
                     }
                 });
 
