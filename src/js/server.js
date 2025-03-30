@@ -1,6 +1,5 @@
 import express from 'express';
 import sqlite3 from 'sqlite3';
-import bodyParser from 'body-parser';
 import cors from 'cors';
 import session from 'express-session';
 
@@ -41,7 +40,6 @@ db.run(`
 
 app.use(express.json());
 app.use(cors());
-app.use(bodyParser.json()); // delete
 
 app.use(session({
     secret: "aaa",
