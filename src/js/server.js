@@ -5,6 +5,7 @@ import session from 'express-session';
 
 const app = express();
 const port = 3000;
+let id = "0";
 
 const db = new sqlite3.Database("notes.db", (err) => {
     if (err) {
@@ -35,17 +36,17 @@ db.run(`
         color TEXT,
         private BOOLEAN,
         created_date TEXT DEFAULT (datetime('now'))
-    )    
+    )
 `);
 
 app.use(express.json());
 app.use(cors());
 
-app.use(session({
-    secret: "aaa",
-    resave: false,
-    saveUninitialized: true
-}));
+// app.use(session({
+//     secret: "aaa",
+//     resave: false,
+//     saveUninitialized: true
+// }));
 
 app.post("/signup", (req, res) => {
     const { email, username, password } = req.body;
@@ -78,16 +79,16 @@ app.post("/signup", (req, res) => {
 
 app.post("/login", (req, res) => {
     const { email, username, password } = req.body;
-
     db.get(
-        "SELECT * FROM users WHERE email = ? AND username = ? AND password = ?", 
-        [email, username, password], 
+        "SELECT * FROM users WHERE email = ? AND username = ? AND password = ?",
+        [email, username, password],
         (err, user) => {
             if (err) {
                 return res.status(500).json({ error: "Database error: " + err.message });
             }
             if (user) {
-                req.session.user_id = user.id;
+                // req.session.user_id = user.id;
+                id = user.id;
                 res.json({
                     success: true,
                     user: { id: user.id, email: user.email, username: user.username }
@@ -123,7 +124,7 @@ app.post("/edit-note-submit", (req, res) => {
     const date = new Date().toLocaleString();
 
     db.run(
-        "UPDATE notes SET title = ?, content = ?, category = ?, color = ?, private = ?, date = ? WHERE id = ?", 
+        "UPDATE notes SET title = ?, content = ?, category = ?, color = ?, private = ?, date = ? WHERE id = ?",
         [title, content, category, color, isPrivate, date, id],
         function (err) {
             if (err) {
@@ -161,14 +162,14 @@ app.post("/add-note", (req, res) => {
 });
 
 app.get("/categories", (req, res) => {
-    const id = req.session?.user_id;
-    if (!id) return res.status(401).json({ error: "Unauthorized" });
+    // const id = req.session?.user_id;
+    // if (!id) return res.status(401).json({ error: "Unauthorized" });
 
     db.get("SELECT categories FROM users WHERE id = ?", [id], (err, row) => {
         if (err) {
             return res.status(500).json({ error: "Database error: " + err.message });
         }
-        
+
         let categories = [];
         if (row?.categories) {
             try {
@@ -182,10 +183,11 @@ app.get("/categories", (req, res) => {
     });
 });
 
-app.post("/delete-category", (req, res) => {
-    const {user_id, category} = req.body;
-    
-    db.get("SELECT categories FROM users WHERE id = ?", [user_id], (err, row) => {
+app.delete("/delete-category/:category_index", (req, res) => {
+    const { category_index } = req.params;
+    console.log("category index: ", category_index);
+
+    db.get("SELECT categories FROM users WHERE id = ?", [id], (err, row) => {
         if (err) {
             return res.status(500).json({ error: err.message });
         }
@@ -194,16 +196,20 @@ app.post("/delete-category", (req, res) => {
         }
 
         let categories = JSON.parse(row.categories);
-        categories = categories.filter(cat => cat !== category);
+        if (category_index < 0 || category_index >= categories.length) {
+            return res.status(400).json({ error: "Invalid category index" });
+        }
+
+        categories.splice(category_index, 1);
 
         db.run(
             "UPDATE users SET categories = ? WHERE id = ?",
-            [JSON.stringify(categories), user_id],
+            [JSON.stringify(categories), id],
             function (err) {
                 if (err) {
                     return res.status(500).json({ error: err.message });
                 }
-                res.json({ message: "Category deleted successfully", user_id });
+                res.json({ message: "Category deleted successfully", id });
             }
         );
     });

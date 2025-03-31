@@ -29,7 +29,7 @@ function checkInputsForLogin(inputs) {
     })
     .then(response => {
         if (!response.ok) {
-            return response.text().then(text => { // Hata mesajını görmek için
+            return response.text().then(text => {
                 throw new Error(text);
             });
         }

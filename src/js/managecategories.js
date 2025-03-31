@@ -43,7 +43,7 @@ function renderCategories() {
                     const confirmation = window.confirm("Are you sure you want to delete this category?");
                     
                     if (confirmation) {
-                        fetch(`http://localhost:3000/categories/${i}`, { method: "DELETE" })
+                        fetch(`http://localhost:3000/delete-category/${i}`, { method: "DELETE" })
                         .then(() => renderCategories())
                         .catch(err => console.error("Error deleting category:", err));
                     }
