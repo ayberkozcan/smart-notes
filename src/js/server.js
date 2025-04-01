@@ -70,7 +70,7 @@ app.post("/signup", (req, res) => {
                     if (err) {
                         return res.status(500).json({ error: err.message });
                     }
-                    res.json({ message: "User added successfully", id: this.lastID });
+                    res.json({ message: "Signed up successfully", id: this.lastID });
                 }
             );
         }
@@ -101,7 +101,7 @@ app.post("/login", (req, res) => {
 });
 
 app.get("/notes", (req, res) => {
-    db.all("SELECT * FROM notes", [], (err, rows) => {
+    db.all("SELECT * FROM notes WHERE user_id = ?", [id], (err, rows) => {
         if (err) {
             return res.status(500).json({ error: err.message });
         }
@@ -110,8 +110,9 @@ app.get("/notes", (req, res) => {
 });
 
 app.get("/edit-note/:id", (req, res) => {
-    const { id } = req.params;
-    db.all("SELECT * FROM notes WHERE id = ?", [id], function (err, rows) {
+    const note_id = req.params;
+
+    db.all("SELECT * FROM notes WHERE id = ? AND user_id = ?", [note_id.id, id], function (err, rows) {
         if (err) {
             return res.status(500).json({ error: err.message });
         }
@@ -124,7 +125,7 @@ app.post("/edit-note-submit", (req, res) => {
     const date = new Date().toLocaleString();
 
     db.run(
-        "UPDATE notes SET title = ?, content = ?, category = ?, color = ?, private = ?, date = ? WHERE id = ?",
+        "UPDATE notes SET title = ?, content = ?, category = ?, color = ?, private = ?, created_date = ? WHERE id = ?",
         [title, content, category, color, isPrivate, date, id],
         function (err) {
             if (err) {
@@ -150,8 +151,8 @@ app.post("/add-note", (req, res) => {
     const date = new Date().toLocaleString();
 
     db.run(
-        "INSERT INTO notes (title, content, category, color, private, date) VALUES (?, ?, ?, ?, ?, ?)",
-        [title, content, category, color, isPrivate ? 1 : 0, date],
+        "INSERT INTO notes (user_id, title, content, category, color, private, created_date) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        [id, title, content, category, color, isPrivate ? 1 : 0, date],
         function (err) {
             if (err) {
                 return res.status(500).json({ error: err.message });
@@ -183,9 +184,39 @@ app.get("/categories", (req, res) => {
     });
 });
 
+app.post("/edit-category", (req, res) => {
+    const { category_index, newName } = req.body;
+
+    db.get("SELECT categories FROM users WHERE id = ?", [id], (err, row) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        if (!row) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        let categories = JSON.parse(row.categories);
+        if (category_index < 0 || category_index >= categories.length) {
+            return res.status(400).json({ error: "Invalid category index" });
+        }
+
+        categories[category_index] = newName;
+
+        db.run(
+            "UPDATE users SET categories = ? WHERE id = ?",
+            [JSON.stringify(categories), id],
+            function (err) {
+                if (err) {
+                    return res.status(500).json({ error: err.message });
+                }
+                res.json({ message: "Category deleted successfully", id });
+            }
+        );
+    });
+});
+
 app.delete("/delete-category/:category_index", (req, res) => {
     const { category_index } = req.params;
-    console.log("category index: ", category_index);
 
     db.get("SELECT categories FROM users WHERE id = ?", [id], (err, row) => {
         if (err) {

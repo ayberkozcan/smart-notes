@@ -34,10 +34,13 @@ function getNote() {
                 content.value = note.content;
                 loadContent();
 
-                category.options[category.selectedIndex].text = note.category;
                 checkbox.checked = note.private ? true : false;
                 previewHidden.innerHTML = checkbox.checked ? `<i class="fa-solid fa-lock" style="padding: 5px;"></i>` : ``;
+                console.log(note.category);
+                category.value = note.category;
                 color.value = note.color;
+                previewCategory.innerHTML = note.category
+                
                 changeColor(color.options[color.selectedIndex].text);
             } else {
                 console.log("Note cannot be found.");
@@ -151,6 +154,7 @@ form.addEventListener("submit", function(e) {
             if (!response.ok) {
                 throw new Error("An error occured while updating the note!");
             }
+            window.location.href = "homepage.html";
             return response.json();
         })
         .then(data => {
