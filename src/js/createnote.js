@@ -83,6 +83,7 @@ color.addEventListener("change", function () {
 
 checkbox.addEventListener("change", function () {
     previewHidden.innerHTML = checkbox.checked ? `<i class="fa-solid fa-lock" style="padding: 5px;"></i>` : ``;
+    // console.log(category[category.value].innerHTML);
 });
 
 form.addEventListener("submit", function(e) {
@@ -94,9 +95,9 @@ form.addEventListener("submit", function(e) {
         const noteData = {
             title: title.value,
             content: content.value,
-            category: category.value,
-            color: color.value,
-            private: checkbox.checked
+            category: category[category.value].innerHTML,
+            color: color.options[color.selectedIndex].text,
+            isPrivate: checkbox.checked
         };
 
         fetch("http://localhost:3000/add-note", {

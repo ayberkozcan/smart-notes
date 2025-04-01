@@ -30,7 +30,8 @@ function checkInputsForLogin(inputs) {
     .then(response => {
         if (!response.ok) {
             return response.text().then(text => {
-                throw new Error(text);
+                // throw new Error(text);
+                alert("Invalid Email, Username or Password!");
             });
         }
         return response.json();

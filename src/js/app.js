@@ -31,7 +31,7 @@ function renderNotes() {
                 row.innerHTML = `
                     <td>${item.title}</td>
                     <td>${item.category}</td>
-                    <td>${item.date}</td>
+                    <td>${item.created_date}</td>
                     <td class="d-flex justify-content-center gap-3">
                         <button type="button" class="btn btn-info btn-sm editNoteBtn" data-id="${item.id}">
                             <i class="fa-solid fa-pen"></i>

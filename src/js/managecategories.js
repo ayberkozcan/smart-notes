@@ -27,10 +27,10 @@ function renderCategories() {
                 editCategoryBtn.addEventListener("click", function () {
                     let newName = prompt("Enter new category name:", item);
                     if (newName && newName.trim() !== "") {
-                        fetch(`http://localhost:3000/categories/${i}`, {
-                            method: "PUT",
+                        fetch(`http://localhost:3000/edit-category`, {
+                            method: "POST",
                             headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ newName: newName.trim() })
+                            body: JSON.stringify({ category_index: i, newName: newName.trim() })
                         })
                         .then(() => renderCategories())
                         .catch(err => console.error("Error updating category:", err));
