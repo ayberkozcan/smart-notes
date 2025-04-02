@@ -42,12 +42,6 @@ db.run(`
 app.use(express.json());
 app.use(cors());
 
-// app.use(session({
-//     secret: "aaa",
-//     resave: false,
-//     saveUninitialized: true
-// }));
-
 app.post("/signup", (req, res) => {
     const { email, username, password } = req.body;
     const date = new Date().toLocaleString();
@@ -87,7 +81,6 @@ app.post("/login", (req, res) => {
                 return res.status(500).json({ error: "Database error: " + err.message });
             }
             if (user) {
-                // req.session.user_id = user.id;
                 id = user.id;
                 res.json({
                     success: true,
@@ -162,9 +155,31 @@ app.post("/add-note", (req, res) => {
     );
 });
 
+app.post("/password-validation", (req, res) => {
+    const { password } = req.body;
+
+    db.get("SELECT * FROM users WHERE id = ? AND password = ?", [id, password], (err, row) => {
+        if (err) {
+            return res.status(500).json({ error: "Database error: " + err.message });
+        }
+        if (!row) {
+            return res.json({ success: false });
+        }
+        res.json({ success: true });
+    });
+});
+
+app.delete("/delete-all-data", (req, res) => {
+
+    db.run("DELETE FROM notes WHERE user_id = ?", [id], function (err) {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        res.json({ message: "Notes deleted successfully" });
+    });
+});
+
 app.get("/categories", (req, res) => {
-    // const id = req.session?.user_id;
-    // if (!id) return res.status(401).json({ error: "Unauthorized" });
 
     db.get("SELECT categories FROM users WHERE id = ?", [id], (err, row) => {
         if (err) {

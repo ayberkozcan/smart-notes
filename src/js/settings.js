@@ -39,9 +39,38 @@ document.getElementById("manageCategoriesBtn").addEventListener("click", functio
 });
 
 document.getElementById("deleteDataBtn").addEventListener("click", function () {
-    const confirmation = window.confirm("Are you sure you want to delete your all data?\nThis action cannot be undone.");
-    
-    if (confirmation) {
-        alert("All data deleted.");
-    }
+    let password = prompt("Enter your password: ");
+
+    fetch(`http://localhost:3000/password-validation`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: password.trim() })
+    })
+    .then(response => {
+        if(!response.ok) {
+            return response.json().then(() => {
+                alert("Wrong Password!");
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            const confirmation = window.confirm("Are you sure you want to delete your all notes?\nThis action cannot be undone.");
+        
+            if (confirmation) {
+                fetch("http://localhost:3000/delete-all-data", { method: "DELETE" })
+                    .then(response => response.json())
+                    .then(() => {
+                        alert("All notes deleted.");
+                    })
+                    .catch(err => console.error("Error:", err));
+            }
+        } else {
+            alert("Wrong Password!");
+        }
+    })
+    .catch(err => {
+        alert("Error: " + err.message);
+    })
 });
