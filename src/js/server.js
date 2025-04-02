@@ -5,7 +5,7 @@ import session from 'express-session';
 
 const app = express();
 const port = 3000;
-let id = "0";
+let id = "1";
 
 const db = new sqlite3.Database("notes.db", (err) => {
     if (err) {
@@ -210,6 +210,41 @@ app.post("/edit-category", (req, res) => {
                     return res.status(500).json({ error: err.message });
                 }
                 res.json({ message: "Category deleted successfully", id });
+            }
+        );
+    });
+});
+
+app.post("/add-category", (req, res) => {
+    const { name } = req.body;
+
+    db.get("SELECT categories FROM users WHERE id = ?", [id], (err, row) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        if (!row) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        let categories = JSON.parse(row.categories);
+
+        if (categories.length >= 10) {
+            return res.status(400).json({ error: "Maximum number of categories reached" });
+        }
+
+        if (categories.includes(name)) {
+            return res.status(400).json({ error: "This category already exists!" });
+        }
+        
+        categories.push(name);
+
+        db.run("UPDATE users SET categories = ? WHERE id = ?",
+            [JSON.stringify(categories), id],
+            function (err) {
+                if (err) {
+                    return res.status(500).json({ error: err.message });
+                }
+                res.json({ message: "Category added successfully", id });
             }
         );
     });

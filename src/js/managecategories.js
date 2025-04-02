@@ -1,11 +1,5 @@
 const categoryCards = document.querySelector(".categoryCards");
 
-document.getElementById("gobackBtn").addEventListener("click", function (e) {
-    window.location.href = "settings.html";
-});
-
-// let categories = ["Personal", "Work", "Ideas"];
-
 function renderCategories() {
     categoryCards.innerHTML = "";
 
@@ -56,3 +50,35 @@ function renderCategories() {
 }
 
 renderCategories();
+
+document.getElementById("gobackBtn").addEventListener("click", function (e) {
+    window.location.href = "settings.html";
+});
+
+document.getElementById("addCategory").addEventListener("click", function (e) {
+    let name = prompt("Enter category name: ");
+    if (name.length > 15) {
+        alert("Category name cannot be longer than 15 characters");
+    } else {
+        if (name && name.trim() !== "") {
+            fetch(`http://localhost:3000/add-category`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name: name.trim() })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => { throw new Error(err.error); });
+                }
+                return response.json();
+            })
+            .then(data => {
+                alert("Category added successfully!");
+                renderCategories();
+            })
+            .catch(err => {
+                alert("Error: " + err.message);
+            });
+        }
+    }
+});
