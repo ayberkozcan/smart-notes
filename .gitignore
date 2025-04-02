@@ -23,3 +23,4 @@ build/
 
 # Ignore OS-specific files
 Thumbs.db
+src/js/notes.db
