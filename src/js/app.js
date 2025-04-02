@@ -4,6 +4,9 @@ const tbodyHidden = document.getElementById("hidden-note-list");
 const hiddenNotesBtn = document.getElementById("hiddenNotesBtn");
 const settingsBtn = document.getElementById("settingsBtn");
 
+const noteCount = document.getElementById("note-count");
+const favCategory = document.getElementById("fav-category");
+
 let hiddenNotesShow = false;
 
 if (localStorage.getItem("theme") === "dark") {
@@ -68,6 +71,25 @@ function renderNotes() {
 }
 
 renderNotes();
+
+function renderInfo() {
+    
+    fetch("http://localhost:3000/get-note-count")
+        .then(response => response.json())
+        .then(count => {
+            noteCount.innerHTML = count["COUNT(id)"];
+        })
+        .catch(err => console.error("Error fetching note count:", err));
+
+    fetch("http://localhost:3000/get-fav-category")
+        .then(response => response.json())
+        .then(category => {
+            favCategory.innerHTML = category["MAX(category)"];
+        })   
+        .catch(err => console.error("Error fetching favourite category:", err));
+}
+
+renderInfo();
 
 hiddenNotesBtn.addEventListener("click", function(e) {
     if (localStorage.getItem('isVerified') === 'true') {

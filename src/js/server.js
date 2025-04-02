@@ -155,6 +155,26 @@ app.post("/add-note", (req, res) => {
     );
 });
 
+app.get("/get-note-count", (req, res) => {
+    
+    db.get("SELECT COUNT(id) FROM notes WHERE user_id = ?", [id], (err, row) => {
+        if (err) {
+            return res.status(500).json({ error: "Database error: " + err.message });
+        }
+        res.json(row);
+    });
+});
+
+app.get("/get-fav-category", (req, res) => {
+
+    db.get("SELECT MAX(category) FROM notes WHERE user_id = ? GROUP BY category ORDER BY COUNT(category) DESC LIMIT 1", [id], (err, row) => {
+        if (err) {
+            return res.status(500).json({ error: "Database error: " + err.message });
+        }
+        res.json(row);
+    });
+});
+
 app.post("/password-validation", (req, res) => {
     const { password } = req.body;
 
