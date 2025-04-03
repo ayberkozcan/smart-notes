@@ -21,7 +21,7 @@ db.run(`
         email TEXT NOT NULL UNIQUE,
         username TEXT NOT NULL UNIQUE,
         password TEXT NOT NULL,
-        categories TEXT DEFAULT '["Personal", "Work", "Ideas"]',
+        categories TEXT DEFAULT '["None", "Personal", "Work", "Ideas", "Other"]',
         created_date TEXT DEFAULT (datetime('now'))
     )
 `);
@@ -138,6 +138,26 @@ app.delete("/delete-note/:id", (req, res) => {
         res.json({ message: "Note deleted successfully. "});
     });
 });
+
+app.get("/get-categories", (req, res) => {
+    
+    db.get("SELECT categories FROM users WHERE id = ?", [id], (err, row) => {
+        if (err) {
+            return res.status(500).json({ error: "Database error: " + err.message });
+        }
+
+        let categories = [];
+        if (row?.categories) {
+            try {
+                categories = JSON.parse(row.categories);
+            } catch {
+                categories = row.categories.split(",");
+            }
+        }
+
+        res.json(categories);
+    })
+})
 
 app.post("/add-note", (req, res) => {
     const { title, content, category, color, isPrivate } = req.body;
@@ -310,7 +330,26 @@ app.delete("/delete-category/:category_index", (req, res) => {
                 if (err) {
                     return res.status(500).json({ error: err.message });
                 }
-                res.json({ message: "Category deleted successfully", id });
+                
+                let placeholders = categories.map(() => '?').join(', ');
+
+                db.all(`SELECT * FROM notes WHERE category NOT IN (${placeholders}) AND user_id = ?`, [...categories, id], (err, rows) => {
+                    if (err) {
+                        return res.status(500).json({ error: err.message });
+                    }
+
+                    let noteIds = rows.map(row => row.id);
+                    
+                    let placeholders = noteIds.map(() => '?').join(', ');
+              
+                    db.run(`UPDATE notes SET category = 'None' WHERE id IN (${placeholders}) AND user_id = ?`, [...noteIds, id], function (err) {
+                        if (err) {
+                            return res.status(500).json({ error: err.message });
+                        }
+
+                        res.json({ message: "Category deleted successfully", id });
+                    });
+                });
             }
         );
     });

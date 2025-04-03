@@ -1,7 +1,6 @@
 const form = document.getElementById("form");
 const title = document.getElementById("title");
 const content = document.getElementById("content");
-const category = document.getElementById("category");
 const color = document.getElementById("color");
 const checkbox = document.getElementById("checkbox");
 const contentLength = document.getElementById("content-length");
@@ -13,7 +12,28 @@ const previewContent = document.getElementById("preview-content");
 const previewCategory = document.getElementById("preview-category");
 const previewHidden = document.getElementById("preview-hidden");
 
+const categoriesSelectBox = document.getElementById("category");
+
 let noteSuccess = false;
+
+function renderCategories() {
+    categoriesSelectBox.innerHTML = "";
+
+    fetch("http://localhost:3000/get-categories")
+        .then(response => response.json())
+        .then(categories => {
+            categories.forEach(item => {
+                let i = 1;
+                const option = document.createElement("option");
+                option.innerHTML = `
+                    <option value="${i}">${item}</option>
+                `;
+                categoriesSelectBox.appendChild(option);
+            });
+        })
+}
+
+renderCategories();
 
 function error(input, message) {
     input.className = "form-control is-invalid";
@@ -83,7 +103,6 @@ color.addEventListener("change", function () {
 
 checkbox.addEventListener("change", function () {
     previewHidden.innerHTML = checkbox.checked ? `<i class="fa-solid fa-lock" style="padding: 5px;"></i>` : ``;
-    // console.log(category[category.value].innerHTML);
 });
 
 form.addEventListener("submit", function(e) {
@@ -114,8 +133,8 @@ form.addEventListener("submit", function(e) {
             return response.json();
         })
         .then(data => {
-            alert(data.message);
             window.location.href = "homepage.html";
+            alert(data.message);
         })
         .catch(error => {
             console.error("Error:", error);

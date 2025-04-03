@@ -1,7 +1,6 @@
 const form = document.getElementById("form");
 const title = document.getElementById("title");
 const content = document.getElementById("content");
-const category = document.getElementById("category");
 const color = document.getElementById("color");
 const checkbox = document.getElementById("checkbox");
 const contentLength = document.getElementById("content-length");
@@ -16,7 +15,28 @@ const previewHidden = document.getElementById("preview-hidden");
 const urlParams = new URLSearchParams(window.location.search);
 const noteId = urlParams.get("id");
 
+const categoriesSelectBox = document.getElementById("category");
+
 let noteSuccess = false;
+
+function renderCategories() {
+    categoriesSelectBox.innerHTML = "";
+
+    fetch("http://localhost:3000/get-categories")
+        .then(response => response.json())
+        .then(categories => {
+            categories.forEach(item => {
+                let i = 1;
+                const option = document.createElement("option");
+                option.innerHTML = `
+                    <option value="${i}">${item}</option>
+                `;
+                categoriesSelectBox.appendChild(option);
+            });
+        })
+}
+
+renderCategories();
 
 function getNote() {
     const id = noteId;
@@ -143,6 +163,9 @@ form.addEventListener("submit", function(e) {
             isPrivate: checkbox.checked
         };
 
+        console.log(category.value);
+        console.log(color.value);
+
         fetch("http://localhost:3000/edit-note-submit", {
             method: "POST",
             headers: {
@@ -158,8 +181,8 @@ form.addEventListener("submit", function(e) {
             return response.json();
         })
         .then(data => {
-            alert(data.message);
             window.location.href = "homepage.html";
+            alert(data.message);
         })
         .catch(error => {
             console.error("Error: ", error);
