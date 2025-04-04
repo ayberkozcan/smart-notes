@@ -30,6 +30,10 @@ function renderCategories() {
                 `;
                 categoriesSelectBox.appendChild(option);
             });
+
+            if (categories.length > 0) {
+                previewCategory.textContent = categoriesSelectBox.options[0].textContent;
+            }
         })
 }
 
@@ -72,8 +76,10 @@ content.addEventListener("input", function () {
 });
 
 category.addEventListener("change", function () {
-    let selectedText = category.options[category.selectedIndex].text;
-    previewCategory.innerHTML = selectedText;
+    // let selectedText = category.options[category.selectedIndex].text;
+    // previewCategory.innerHTML = selectedText;
+
+    previewCategory.innerText = category.value;
 });
 
 color.addEventListener("change", function () {
@@ -107,14 +113,14 @@ checkbox.addEventListener("change", function () {
 
 form.addEventListener("submit", function(e) {
     e.preventDefault();
-
+    
     checkRequired(title);
 
     if (noteSuccess) {
         const noteData = {
             title: title.value,
             content: content.value,
-            category: category[category.value].innerHTML,
+            category: category.value,
             color: color.options[color.selectedIndex].text,
             isPrivate: checkbox.checked
         };
