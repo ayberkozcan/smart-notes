@@ -94,7 +94,16 @@ app.post("/login", (req, res) => {
 });
 
 app.get("/notes", (req, res) => {
-    db.all("SELECT * FROM notes WHERE user_id = ?", [id], (err, rows) => {
+    db.all("SELECT * FROM notes WHERE user_id = ? AND private = 0", [id], (err, rows) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        res.json(rows);
+    });
+});
+
+app.get("/notes-private", (req, res) => {
+    db.all("SELECT * FROM notes WHERE user_id = ? AND private = 1", [id], (err, rows) => {
         if (err) {
             return res.status(500).json({ error: err.message });
         }

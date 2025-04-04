@@ -17,16 +17,12 @@ if (localStorage.getItem("theme") === "dark") {
     table.classList.remove("table-dark");
 }
 
-// Temporary (need verification using backend)
-
-let hiddenNotes = [
-    { title: "My Hidden Note", category: "Personal", date: "17.03.2025" }
-];
-
 function renderNotes() {
     tbody.innerHTML = "";
 
-    fetch("http://localhost:3000/notes")
+    let path = !hiddenNotesShow ? "notes" : "notes-private";
+
+    fetch(`http://localhost:3000/${path}`)
         .then(response => response.json())
         .then(notes => {
             notes.forEach(item => {
