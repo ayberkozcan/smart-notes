@@ -10,7 +10,8 @@
 }
 .cards > div {
     flex: 1;
-    margin-bottom: 10px;
+    padding: 5px;
+    /* margin-bottom: 10px; */
 }
 .cards .btn {
     width: 100%;
@@ -36,14 +37,18 @@ th:last-child {
     --bg-color: #ffffff;
     --text-color: #000000;
 }
-
 .dark-mode {
     --bg-color: #1a1a1a;
     --text-color: #ffffff;
 }
-
 body {
     background-color: var(--bg-color);
     color: var(--text-color);
     transition: background-color 0.3s, color 0.3s;
+}
+.searchHeader {
+    background-color: rgba(238, 238, 238, 0.822);
+    padding: 15px;
+    border-radius: 10px 10px 0 0;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.2);
 }
