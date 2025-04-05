@@ -3,6 +3,7 @@ const tbody = document.getElementById("note-list");
 const tbodyHidden = document.getElementById("hidden-note-list");
 const hiddenNotesBtn = document.getElementById("hiddenNotesBtn");
 const settingsBtn = document.getElementById("settingsBtn");
+const logoutBtn = document.getElementById("logoutBtn");
 
 const noteCount = document.getElementById("note-count");
 const favCategory = document.getElementById("fav-category");
@@ -120,4 +121,10 @@ document.getElementById("createNoteBtn").addEventListener("click", function(e) {
 
 settingsBtn.addEventListener("click", function(e) {
     window.location.href = "settings.html";
+});
+
+logoutBtn.addEventListener("click", function(e) {
+    localStorage.setItem('isVerified', 'false');
+    localStorage.removeItem('userData');
+    window.location.href = "loginpage.html"; 
 });

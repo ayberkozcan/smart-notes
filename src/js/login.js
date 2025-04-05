@@ -5,6 +5,14 @@ const password = document.getElementById("password");
 let checkBox = document.getElementById("checkbox");
 let header = document.querySelector(".card-header").innerHTML;
 
+const savedData = JSON.parse(localStorage.getItem('userData'));
+
+if (savedData) {
+    email.value = savedData.email;
+    username.value = savedData.username;
+    checkBox.checked = true;
+}
+
 let loginStatus = "login";
 let loginSuccess = false;
 let signupSuccessCounter = 0;
@@ -39,6 +47,14 @@ function checkInputsForLogin(inputs) {
     .then(data => {
         if (data.success) {
             loginSuccess = true;
+
+            if (checkBox.checked) {
+                const userData = {
+                    email: email.value,
+                    username: username.value
+                };
+                localStorage.setItem('userData', JSON.stringify(userData));
+            }
             alert("Login Successful!");
             window.location.href = "homepage.html";
         } else {
