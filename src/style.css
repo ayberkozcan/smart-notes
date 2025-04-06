@@ -52,3 +52,64 @@ body {
     border-radius: 10px 10px 0 0;
     box-shadow: 0 0 8px rgba(0, 0, 0, 0.2);
 }
+#notesTable th, #notesTable td {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+.hr-top {
+    margin-bottom: 75px;
+}
+.note-control {
+    width: 100%;
+    box-sizing: border-box;
+}
+.info-edit {
+    height: 100%;
+    width: 50%;
+    background-color: rgba(255, 255, 210, 0.822);
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+}
+.preview {
+    height: 100%;
+    background-color: rgba(192, 192, 192, 0.822);
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+}
+.preview-box {
+    border: 1px solid #ccc;
+    padding: 10px;
+    height: 400px;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+    background-color: #f8f9fa;
+    overflow-y: auto;
+}
+option.option-yellow {
+    background-color: #faffcc;
+}
+
+option.option-gray {
+    background-color: rgba(192, 192, 192, 0.822);
+}
+
+option.option-blue {
+    background-color: #a1afff;
+}
+
+option.option-red {
+    background-color: #ffb3b3;
+}
+
+option.option-pink {
+    background-color: #ffb0ff;
+}
