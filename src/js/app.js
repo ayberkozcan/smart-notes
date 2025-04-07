@@ -10,6 +10,10 @@ const favCategory = document.getElementById("fav-category");
 
 let hiddenNotesShow = false;
 
+let notesData = [];
+let sortField = null;
+let sortDirection = "asc";
+
 if (localStorage.getItem("theme") === "dark") {
     table.classList.add("table-dark");
     hiddenNotesBtn.classList = "btn btn-danger";
@@ -26,55 +30,84 @@ function renderNotes() {
     fetch(`http://localhost:3000/${path}`)
         .then(response => response.json())
         .then(notes => {
-            if (notes.length === 0) {
-                const emptyRow = document.createElement("tr");
-                emptyRow.innerHTML = `<td colspan="4" class="text-center">No notes found!</td>`;
-                tbody.appendChild(emptyRow);
-            } else {
-                notes.forEach(item => {
-                    const row = document.createElement("tr");
-                    row.innerHTML = `
-                        <td>${item.title}</td>
-                        <td>${item.category}</td>
-                        <td>${item.created_date}</td>
-                        <td class="d-flex justify-content-center gap-3">
-                            <button type="button" class="btn btn-info btn-sm viewNoteBtn" data-id="${item.id}">
-                                <i class="fa-solid fa-eye"></i>
-                            </button>
-                            <button type="button" class="btn btn-success btn-sm editNoteBtn" data-id="${item.id}">
-                                <i class="fa-solid fa-pen"></i>
-                            </button>
-                            <button type="button" class="btn btn-danger btn-sm deleteNoteBtn" data-id="${item.id}">
-                                <i class="fa-solid fa-trash"></i>
-                            </button>
-                        </td>
-                    `;
-                    
-                    const deleteNoteBtn = row.querySelector(".deleteNoteBtn");
-                    deleteNoteBtn.addEventListener("click", function() {
-                        const confirmation = window.confirm("Are you sure you want to delete this note?");
-                        if (confirmation) {
-                            fetch(`http://localhost:3000/delete-note/${item.id}`, { method: "DELETE" })
-                                .then(response => response.json())
-                                .then(() => {
-                                    alert("Note deleted.");
-                                    renderNotes();
-                                })
-                                .catch(err => console.error("Error:", err));
-                        }
-                    });
-                    
-                    const editNoteBtn = row.querySelector(".editNoteBtn");
-                    editNoteBtn.addEventListener("click", function() {
-                        window.location.href = `editnotepage.html?id=${item.id}`;
-                    });
-                    
-                    tbody.appendChild(row);
-                });
-            }
+            notesData = notes;
+
+            drawNotes(notesData);
         })
         .catch(err => console.error("Error fetching notes:", err));
 }
+
+function drawNotes(notes) {
+    tbody.innerHTML = "";
+
+    if (notes.length === 0) {
+        const emptyRow = document.createElement("tr");
+        emptyRow.innerHTML = `<td colspan="4" class="text-center">No notes found!</td>`;
+        tbody.appendChild(emptyRow);
+    } else {
+        notes.forEach(item => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td>${item.title}</td>
+                <td>${item.category}</td>
+                <td>${item.created_date}</td>
+                <td class="d-flex justify-content-center gap-3">
+                    <button type="button" class="btn btn-info btn-sm viewNoteBtn" data-id="${item.id}">
+                        <i class="fa-solid fa-eye"></i>
+                    </button>
+                    <button type="button" class="btn btn-success btn-sm editNoteBtn" data-id="${item.id}">
+                        <i class="fa-solid fa-pen"></i>
+                    </button>
+                    <button type="button" class="btn btn-danger btn-sm deleteNoteBtn" data-id="${item.id}">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </td>
+            `;
+
+            const deleteNoteBtn = row.querySelector(".deleteNoteBtn");
+            deleteNoteBtn.addEventListener("click", function() {
+                const confirmation = window.confirm("Are you sure you want to delete this note?");
+                if (confirmation) {
+                    fetch(`http://localhost:3000/delete-note/${item.id}`, { method: "DELETE" })
+                        .then(response => response.json())
+                        .then(() => {
+                            alert("Note deleted.");
+                            renderNotes();
+                        })
+                        .catch(err => console.error("Error:", err));
+                }
+            });
+
+            const editNoteBtn = row.querySelector(".editNoteBtn");
+            editNoteBtn.addEventListener("click", function() {
+                window.location.href = `editnotepage.html?id=${item.id}`;
+            });
+
+            tbody.appendChild(row);
+        });
+    }
+}
+
+function sortNotes(field) {
+    if (sortField === field) {
+        sortDirection = sortDirection === "asc" ? "desc" : "asc";
+    } else {
+        sortField = field;
+        sortDirection = "asc";
+    }
+
+    const sortedNotes = [...notesData].sort((a, b) => {
+        if (a[field] < b[field]) return sortDirection === "asc" ? -1 : 1;
+        if (a[field] > b[field]) return sortDirection === "asc" ? 1 : -1;
+        return 0;
+    });
+
+    drawNotes(sortedNotes);
+}
+
+document.querySelector("th:nth-child(1)").addEventListener("click", () => sortNotes("title"));
+document.querySelector("th:nth-child(2)").addEventListener("click", () => sortNotes("category"));
+document.querySelector("th:nth-child(3)").addEventListener("click", () => sortNotes("created_date"));
 
 renderNotes();
 
