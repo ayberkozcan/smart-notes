@@ -8,6 +8,12 @@ const logoutBtn = document.getElementById("logoutBtn");
 const noteCount = document.getElementById("note-count");
 const favCategory = document.getElementById("fav-category");
 
+const previousPageBtn = document.getElementById("previousPageBtn");
+const nextPageBtn = document.getElementById("nextPageBtn");
+const pageNumber = document.getElementById("pageNumber");
+
+let currentPage = 1;
+
 let hiddenNotesShow = false;
 
 let notesData = [];
@@ -150,6 +156,18 @@ hiddenNotesBtn.addEventListener("click", function(e) {
 
 document.getElementById("createNoteBtn").addEventListener("click", function(e) {
     window.location.href = "createnotepage.html";
+});
+
+previousPageBtn.addEventListener("click", function (e) {
+    currentPage = currentPage == 1 ? 1 : currentPage -= 1; 
+    pageNumber.innerHTML = currentPage;
+});
+
+nextPageBtn.addEventListener("click", function (e) {
+    if (parseFloat(noteCount.innerText) / (9 * currentPage) > 1) { // noteCount - hiddenNoteCount
+        currentPage++;
+    }
+    pageNumber.innerHTML = currentPage;
 });
 
 settingsBtn.addEventListener("click", function(e) {
