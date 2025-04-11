@@ -19,6 +19,7 @@ let hiddenNotesShow = false;
 let notesData = [];
 let sortField = null;
 let sortDirection = "asc";
+let displayedNotes = [];
 
 if (localStorage.getItem("theme") === "dark") {
     table.classList.add("table-dark");
@@ -37,7 +38,7 @@ function renderNotes() {
         .then(response => response.json())
         .then(notes => {
             notesData = notes;
-
+            displayedNotes = [...notesData];
             drawNotes(notesData);
         })
         .catch(err => console.error("Error fetching notes:", err));
@@ -51,7 +52,10 @@ function drawNotes(notes) {
         emptyRow.innerHTML = `<td colspan="4" class="text-center">No notes found!</td>`;
         tbody.appendChild(emptyRow);
     } else {
-        notes.forEach(item => {
+        let index = 0;
+        if (currentPage != 1)
+            index = 9 * (currentPage - 1);
+        notes.slice(index, 9 * currentPage).forEach(item => {
             const row = document.createElement("tr");
             row.innerHTML = `
                 <td>${item.title}</td>
@@ -102,13 +106,13 @@ function sortNotes(field) {
         sortDirection = "asc";
     }
 
-    const sortedNotes = [...notesData].sort((a, b) => {
+    displayedNotes = [...notesData].sort((a, b) => {
         if (a[field] < b[field]) return sortDirection === "asc" ? -1 : 1;
         if (a[field] > b[field]) return sortDirection === "asc" ? 1 : -1;
         return 0;
     });
 
-    drawNotes(sortedNotes);
+    drawNotes(displayedNotes);
 }
 
 document.querySelector("th:nth-child(1)").addEventListener("click", () => sortNotes("title"));
@@ -161,13 +165,15 @@ document.getElementById("createNoteBtn").addEventListener("click", function(e) {
 previousPageBtn.addEventListener("click", function (e) {
     currentPage = currentPage == 1 ? 1 : currentPage -= 1; 
     pageNumber.innerHTML = currentPage;
+    drawNotes(displayedNotes);
 });
 
 nextPageBtn.addEventListener("click", function (e) {
-    if (parseFloat(noteCount.innerText) / (9 * currentPage) > 1) { // noteCount - hiddenNoteCount
+    if (notesData.length / (9 * currentPage) > 1) { 
         currentPage++;
     }
     pageNumber.innerHTML = currentPage;
+    drawNotes(displayedNotes);
 });
 
 settingsBtn.addEventListener("click", function(e) {
