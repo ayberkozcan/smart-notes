@@ -1,57 +1,61 @@
-.cards {
+h1 {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-weight: 700;
+    font-size: 3.5rem;
+    letter-spacing: 1px;
+    color: #bfa100;
+    margin-bottom: 1.5rem;
+    text-align: center;
+    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+h3 {
+    font-family: 'Playfair Display', serif;
+    font-weight: 600;
+    font-size: 1.8rem;
+    color: #333;
+}
+
+.cards, .info, .info-edit, .preview {
     height: 100%;
-    width: 75%;
-    background-color: rgba(238, 238, 238, 0.822);
-    padding: 15px;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    background-color: rgba(238, 238, 238, 0.9);
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25);
     display: flex;
     flex-direction: column;
+    transition: all 0.3s ease-in-out;
 }
-.cards > div {
+
+.cards {
+    width: 75%;
+}
+
+.info {
+    background-color: rgba(210, 255, 253, 0.7);
+    width: 75%;
+}
+
+.info-edit {
+    background-color: rgba(255, 255, 210, 0.7);
+    width: 50%;
+}
+
+.preview {
+    background-color: rgba(192, 192, 192, 0.7);
+}
+
+.cards > div, .info > div {
     flex: 1;
     padding: 5px;
-    /* margin-bottom: 10px; */
-}
-.cards .btn {
-    width: 100%;
-}
-.info {
-    height: 100%;
-    width: 75%;
-    background-color: rgba(210, 255, 253, 0.473);
-    padding: 15px;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    display: flex;
-    flex-direction: column;
-}
-.info > div {
-    flex: 1;
     margin-bottom: 10px;
 }
-th:last-child {
-    width: 150px;
+
+.cards .btn, .info .btn, .info-edit .btn, .preview .btn {
+    width: 100%;
 }
-:root {
-    --bg-color: #ffffff;
-    --text-color: #000000;
-}
-.dark-mode {
-    --bg-color: #1a1a1a;
-    --text-color: #ffffff;
-}
-body {
-    background-color: var(--bg-color);
-    color: var(--text-color);
-    transition: background-color 0.3s, color 0.3s;
-}
-.searchHeader {
-    background-color: rgba(238, 238, 238, 0.822);
-    padding: 15px;
-    border-radius: 10px 10px 0 0;
-    box-shadow: 0 0 8px rgba(0, 0, 0, 0.2);
-}
+
 #notesTable th, #notesTable td {
     overflow: hidden;
     text-overflow: ellipsis;
@@ -59,32 +63,62 @@ body {
     vertical-align: middle;
 }
 
+#notesTable tbody tr:hover {
+    background-color: #5a5a5a;
+    cursor: pointer;
+}
+
+th:last-child {
+    width: 150px;
+}
+
+.searchHeader {
+    background-color: rgba(238, 238, 238, 0.9);
+    padding: 15px;
+    border-radius: 15px 15px 0 0;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.searchHeader input {
+    width: 200px;
+    margin-left: 15px;
+    padding: 8px;
+}
+
+.searchHeader button {
+    margin-left: 10px;
+    padding: 8px 12px;
+}
+
+:root {
+    --bg-color: #ffffff;
+    --text-color: #000000;
+}
+
+.dark-mode {
+    --bg-color: #1a1a1a;
+    --text-color: #ffffff;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    transition: background-color 0.3s, color 0.3s;
+    font-family: 'Poppins', sans-serif;
+}
+
 .hr-top {
     margin-bottom: 75px;
 }
+
 .note-control {
     width: 100%;
     box-sizing: border-box;
 }
-.info-edit {
-    height: 100%;
-    width: 50%;
-    background-color: rgba(255, 255, 210, 0.822);
-    padding: 15px;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    display: flex;
-    flex-direction: column;
-}
-.preview {
-    height: 100%;
-    background-color: rgba(192, 192, 192, 0.822);
-    padding: 15px;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    display: flex;
-    flex-direction: column;
-}
+
 .preview-box {
     border: 1px solid #ccc;
     padding: 10px;
@@ -93,7 +127,9 @@ body {
     overflow-wrap: break-word;
     background-color: #f8f9fa;
     overflow-y: auto;
+    border-radius: 8px;
 }
+
 option.option-yellow {
     background-color: #faffcc;
 }
@@ -109,12 +145,15 @@ option.option-red {
 option.option-pink {
     background-color: #ffb0ff;
 }
+
 button {
-    transition: transform 0.8s ease;
+    transition: transform 0.3s ease;
 }
+
 button:hover {
-    transform: scale(1.03);
+    transform: scale(1.05);
 }
+
 .page-number {
     display: inline-block;
     padding: 6px 12px;
@@ -123,4 +162,13 @@ button:hover {
     font-weight: 500;
     background-color: #f8f9fa;
     color: #495057;
+    transition: background-color 0.3s ease;
+}
+
+.page-number:hover {
+    background-color: #e2e6ea;
+}
+
+* {
+    transition: all 0.2s ease-in-out;
 }

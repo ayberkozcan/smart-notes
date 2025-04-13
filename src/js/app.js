@@ -29,17 +29,16 @@ if (localStorage.getItem("theme") === "dark") {
     table.classList.remove("table-dark");
 }
 
-document.getElementById("searchInput").addEventListener("input", function () {
-    const input = this.value.toLowerCase();
+// document.getElementById("searchInput").addEventListener("input", function () {
+//     const input = this.value.toLowerCase();
 
-    const filteredNotes = notesData.filter(note => 
-        note.title.toLowerCase().includes(input)
-    );
+//     const filteredNotes = notesData.filter(note => 
+//         note.title.toLowerCase().includes(input)
+//     );
 
-    displayedNotes = filteredNotes;
-    drawNotes(displayedNotes);
-});
-
+//     displayedNotes = filteredNotes;
+//     drawNotes(displayedNotes);
+// });
 
 function renderNotes() {
     tbody.innerHTML = "";
