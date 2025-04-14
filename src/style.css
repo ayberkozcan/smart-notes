@@ -172,3 +172,19 @@ button:hover {
 * {
     transition: all 0.2s ease-in-out;
 }
+
+.btn-success {
+    background: linear-gradient(135deg, #bfa100, #ffd700);
+    border: none;
+    color: white;
+}
+
+.btn-secondary {
+    background: linear-gradient(135deg, #6c757d, #adb5bd);
+    border: none;
+    color: white;
+}
+.cards:hover, .info:hover, .info-edit:hover, .preview:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.25);
+}
