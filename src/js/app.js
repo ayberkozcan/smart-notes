@@ -196,3 +196,75 @@ logoutBtn.addEventListener("click", function(e) {
     localStorage.removeItem('userData');
     window.location.href = "loginpage.html"; 
 });
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.body.addEventListener('click', function (e) {
+        const viewBtn = e.target.closest('.viewNoteBtn');
+        if (viewBtn) {
+            const noteId = viewBtn.getAttribute('data-id');
+            showNoteModal(noteId);
+        }
+    });
+
+    const modal = document.getElementById("noteModal");
+    // const closeBtn = document.getElementById("closeNoteModal");
+
+    // closeBtn.onclick = function () {
+    //     modal.style.display = "none";
+    // };
+
+    function showNoteModal(id) {
+        const note = getNodeById(id);
+        const color = (note) => {
+            const colors = {
+                Gray: "rgba(192, 192, 192, 0.822)",
+                Yellow: "#faffcc",
+                Blue: "#a1afff",
+                Red: "#ffb3b3",
+                Pink: "#ffb0ff"
+            };
+            return colors[note.color] || "#ffffff";
+        };
+
+        const noteColor = color(note);
+        const modal = document.getElementById("noteModal");
+        const modalContent = document.getElementById("noteModalContent");
+        
+        document.getElementById("noteContent").innerHTML = `
+            <div class="preview-homepage" style="background-color:${noteColor}">
+                <div class="form-group">
+                    <p id="preview-title">${note.title}</p>
+                </div>
+                <hr>
+                <div class="form-group">
+                    <div id="preview-content" class="preview-box">${note.content}</div>
+                </div>           
+                
+                <div class="form-group d-flex justify-content-between">
+                    <p id="preview-category">${note.category}</p>
+                </div>
+            </div>
+        `;
+
+        modal.style.display = "block";
+        modalContent.classList.remove("fade-out");
+        modalContent.classList.add("fade-in");
+
+        
+        window.onclick = function (event) {
+            if (event.target === modal) {
+                modalContent.classList.remove("fade-in");
+                modalContent.classList.add("fade-out");
+                
+                setTimeout(() => {
+                    modal.style.display = "none";
+                    modalContent.classList.remove("fade-out");
+                }, 300);
+            }
+        };
+    }
+
+    function getNodeById(id) {
+        return notesData.find(n => n.id == id);
+    }
+});

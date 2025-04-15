@@ -17,7 +17,7 @@ h3 {
     color: #333;
 }
 
-.cards, .info, .info-edit, .preview {
+.cards, .info, .info-edit, .preview, .preview-homepage {
     height: 100%;
     background-color: rgba(238, 238, 238, 0.9);
     padding: 20px;
@@ -42,7 +42,7 @@ h3 {
     width: 50%;
 }
 
-.preview {
+.preview, .preview-homepage {
     background-color: rgba(192, 192, 192, 0.7);
 }
 
@@ -52,7 +52,7 @@ h3 {
     margin-bottom: 10px;
 }
 
-.cards .btn, .info .btn, .info-edit .btn, .preview .btn {
+.cards .btn, .info .btn, .info-edit .btn, .preview, .preview-homepage .btn {
     width: 100%;
 }
 
@@ -184,7 +184,56 @@ button:hover {
     border: none;
     color: white;
 }
+
 .cards:hover, .info:hover, .info-edit:hover, .preview:hover {
     transform: translateY(-5px);
     box-shadow: 0 8px 16px rgba(0,0,0,0.25);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.75);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+        transform: scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: scale(0);
+    }
+}
+
+.note-modal-content.fade-in {
+    animation: fadeIn 0.3s ease-out;
+}
+.note-modal-content.fade-out {
+    animation: fadeOut 0.3s ease-out;
+}
+
+.note-modal {
+  position: fixed;
+  z-index: 999;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0,0,0,0.5);
+}
+
+.note-modal-content {
+  background-color: transparent;
+  margin: 10% auto;
+  padding: 20px;
+  border-radius: 10px;
+  width: 70%;
+  max-width: 600px;
 }
