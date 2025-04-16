@@ -20,7 +20,7 @@
                 <div class="row mt-5">
                     <div class="col-12 searchHeader" style="display: flex; align-items: center;">
                         <h3 style="flex: 1;">My Notes</h3>
-                        <input class="form-control mr-sm-2" type="search" placeholder="Search by Title" aria-label="Search" style="width: 150px; margin-left: 10px;">
+                        <input class="form-control mr-sm-2" id="searchInput" type="search" placeholder="Search by Title" aria-label="Search" style="width: 150px; margin-left: 10px;">
                         <button class="btn btn-outline-success my-2 my-sm-0" type="submit"><i class="fa-solid fa-magnifying-glass"></i></button>
                     </div>                    
                     <table class="table table-bordered table-striped table-dark" id="notesTable" style="table-layout: fixed; width: 100%;">
@@ -95,6 +95,11 @@
         <div class="note-modal-content" id="noteModalContent">
             <span id="closeNoteModal" style="cursor: pointer; float: right; font-size: 20px;"></span>
             <div id="noteContent"></div>
+        </div>
+    </div>
+
+    <div id="welcomePopup" class="welcomePopup">
+        <div id="welcomePopupContent" style="color: rgb(255, 255, 255);">
         </div>
     </div>
 

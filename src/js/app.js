@@ -29,16 +29,37 @@ if (localStorage.getItem("theme") === "dark") {
     table.classList.remove("table-dark");
 }
 
-// document.getElementById("searchInput").addEventListener("input", function () {
-//     const input = this.value.toLowerCase();
+document.addEventListener('DOMContentLoaded', () => {
+    const welcomePopup = document.getElementById("welcomePopup");
+    const welcomePopupContent = document.getElementById("welcomePopupContent");
+    const username = "asd";
+    welcomePopupContent.textContent = `Welcome ${username}!`;
 
-//     const filteredNotes = notesData.filter(note => 
-//         note.title.toLowerCase().includes(input)
-//     );
+    welcomePopup.style.display = "block";
 
-//     displayedNotes = filteredNotes;
-//     drawNotes(displayedNotes);
-// });
+    welcomePopup.classList.remove("fade-out");
+    welcomePopup.classList.add("fade-in");
+
+    setTimeout(() => {
+        welcomePopup.classList.remove("fade-in");
+        welcomePopup.classList.add("fade-out");
+        setTimeout(() => {
+            welcomePopup.style.display = "none";
+        }, 300);
+    }, 2000);
+});
+
+document.getElementById("searchInput").addEventListener("input", function () {
+    const input = this.value.toLowerCase();
+    console.log(input);
+
+    const filteredNotes = notesData.filter(note => 
+        note.title.toLowerCase().includes(input)
+    );
+
+    displayedNotes = filteredNotes;
+    drawNotes(displayedNotes);
+});
 
 function renderNotes() {
     tbody.innerHTML = "";

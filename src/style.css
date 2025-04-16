@@ -211,11 +211,26 @@ button:hover {
     }
 }
 
-.note-modal-content.fade-in {
+.note-modal-content.fade-in, .welcomePopup.fade-in {
     animation: fadeIn 0.3s ease-out;
 }
-.note-modal-content.fade-out {
+.note-modal-content.fade-out, .welcomePopup.fade-out {
     animation: fadeOut 0.3s ease-out;
+}
+
+.welcomePopup {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    text-align: center;
+    background-color: #00af2c;
+    padding: 24px 32px;
+    border-radius: 10px;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+    font-family: sans-serif;
+    font-size: 18px;
+    z-index: 9999;
+    min-width: 220px;
 }
 
 .note-modal {
