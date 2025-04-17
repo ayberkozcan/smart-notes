@@ -33,20 +33,34 @@ document.addEventListener('DOMContentLoaded', () => {
     const welcomePopup = document.getElementById("welcomePopup");
     const welcomePopupContent = document.getElementById("welcomePopupContent");
     const username = "asd";
-    welcomePopupContent.textContent = `Welcome ${username}!`;
 
-    welcomePopup.style.display = "block";
+    const savedTime = localStorage.getItem("welcomePopupTime");
 
-    welcomePopup.classList.remove("fade-out");
-    welcomePopup.classList.add("fade-in");
+    if (savedTime) {
+        const now = Date.now();
+        const elapsed = now - parseInt(savedTime);
+        const tenMinutes = 10 * 60 * 1000;
+        
+        if (elapsed > tenMinutes) {
+            welcomePopupContent.textContent = `Welcome ${username}!`;
 
-    setTimeout(() => {
-        welcomePopup.classList.remove("fade-in");
-        welcomePopup.classList.add("fade-out");
-        setTimeout(() => {
+            welcomePopup.style.display = "block";
+            welcomePopup.classList.remove("fade-out");
+            welcomePopup.classList.add("fade-in");
+
+            setTimeout(() => {
+                welcomePopup.classList.remove("fade-in");
+                welcomePopup.classList.add("fade-out");
+                setTimeout(() => {
+                    welcomePopup.style.display = "none";
+                }, 300);
+            }, 2000);
+
+            // localStorage.removeItem("welcomePopupTime");
+        } else {
             welcomePopup.style.display = "none";
-        }, 300);
-    }, 2000);
+        }
+    }
 });
 
 document.getElementById("searchInput").addEventListener("input", function () {
