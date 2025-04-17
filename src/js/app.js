@@ -12,6 +12,9 @@ const previousPageBtn = document.getElementById("previousPageBtn");
 const nextPageBtn = document.getElementById("nextPageBtn");
 const pageNumber = document.getElementById("pageNumber");
 
+const todoContent = document.getElementById("to-do-content");
+const addTodo = document.getElementById("addTodo");
+
 let currentPage = 1;
 
 let hiddenNotesShow = false;
@@ -91,6 +94,11 @@ function renderNotes() {
 }
 
 function drawNotes(notes) {
+    const oldTfoot = table.querySelector("tfoot");
+    if (oldTfoot) {
+        table.removeChild(oldTfoot);
+    }
+
     tbody.innerHTML = "";
 
     if (notes.length === 0) {
@@ -141,6 +149,15 @@ function drawNotes(notes) {
 
             tbody.appendChild(row);
         });
+        const tfoot = document.createElement("tfoot");
+        const row = document.createElement("tr");
+        const cell = document.createElement("td");
+        cell.colSpan = 4;
+        cell.style.textAlign = "center";
+        cell.textContent = `${notesData.length} notes listed`;
+        row.appendChild(cell);
+        tfoot.appendChild(row);
+        table.appendChild(tfoot);
     }
 }
 
@@ -166,25 +183,81 @@ document.querySelector("th:nth-child(2)").addEventListener("click", () => sortNo
 document.querySelector("th:nth-child(3)").addEventListener("click", () => sortNotes("created_date"));
 
 renderNotes();
-
-function renderInfo() {
+renderToDos();
+// function renderInfo() {
     
-    fetch("http://localhost:3000/get-note-count")
-        .then(response => response.json())
-        .then(count => {
-            noteCount.innerHTML = count["COUNT(id)"];
-        })
-        .catch(err => console.error("Error fetching note count:", err));
+//     fetch("http://localhost:3000/get-note-count")
+//         .then(response => response.json())
+//         .then(count => {
+//             noteCount.innerHTML = count["COUNT(id)"];
+//         })
+//         .catch(err => console.error("Error fetching note count:", err));
 
-    fetch("http://localhost:3000/get-fav-category")
+//     fetch("http://localhost:3000/get-fav-category")
+//         .then(response => response.json())
+//         .then(category => {
+//             favCategory.innerHTML = category["MAX(category)"];
+//         })   
+//         .catch(err => console.error("Error fetching favourite category:", err));
+// }
+
+// renderInfo();
+
+function renderToDos() {
+    todoContent.innerHTML = "";
+
+    fetch(`http://localhost:3000/todos`)
         .then(response => response.json())
-        .then(category => {
-            favCategory.innerHTML = category["MAX(category)"];
-        })   
-        .catch(err => console.error("Error fetching favourite category:", err));
+        .then(todos => {
+            console.log(todos);
+            todosData = todos;
+            displayedTodos = [...todosData];
+            drawTodos(todosData);
+        })
+        .catch(err => console.error("Error fetching notes:", err));
 }
 
-renderInfo();
+function drawTodos(todos) {
+    todoContent.innerHTML = "";
+
+    if (todos.length === 0) {
+        const emptyRow = document.createElement("tr");
+        emptyRow.innerHTML = `<td colspan="4" class="text-center">No data found!</td>`;
+        todoContent.appendChild(emptyRow);
+    } else {
+        todos.forEach(item => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td>${item.isDone}</td>
+                <td>${item.title}</td>
+                <td style="background-color:green;">${item.category}</td>
+                <td class="d-flex justify-content-center gap-3">
+                    <input type="checkbox" id="myCheck" data-id="${item.id}">
+                    <span>${item.title}</span>
+                    <span>${item.category}</span>
+                </td>
+            `;
+
+            // const deleteTodoBtn = row.querySelector(".deleteTodoBtn");
+            // deleteTodoBtn.addEventListener("click", function() {
+            //     fetch(`http://localhost:3000/delete-todo/${todo.id}`, { method: "DELETE" })
+            //         .then(response => response.json())
+            //         .then(() => {
+            //             renderToDos();
+            //         })
+            //         .catch(err => console.error("Error:", err));
+
+            // });
+
+            // const editNoteBtn = row.querySelector(".editNoteBtn");
+            // editNoteBtn.addEventListener("click", function() {
+            //     window.location.href = `editnotepage.html?id=${item.id}`;
+            // });
+
+            todoContent.appendChild(row);
+        });
+    }
+}
 
 hiddenNotesBtn.addEventListener("click", function(e) {
     if (localStorage.getItem('isVerified') === 'true') {
@@ -206,6 +279,41 @@ hiddenNotesBtn.addEventListener("click", function(e) {
 
 document.getElementById("createNoteBtn").addEventListener("click", function(e) {
     window.location.href = "createnotepage.html";
+});
+
+document.getElementById("addTodo").addEventListener("click", function (e) {
+    let title = prompt("Enter task name: ");
+    if (title.length > 50) {
+        alert("Name cannot be longer than 50 characters");
+    } else {
+        if (title && title.trim() !== "") {
+            let category = prompt("Enter category: ");
+            if (category.length > 20) {
+                alert("Category cannot be longer than 20 characters");
+            } else {
+                if (category && category.trim() !== "") {
+                    fetch(`http://localhost:3000/add-todo`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ title: title.trim(), category: category.trim() })
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.json().then(err => { throw new Error(err.error); });
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        alert("Task added successfully!");
+                        renderToDos();
+                    })
+                    .catch(err => {
+                        alert("Error: " + err.message);
+                    });
+                }
+            }
+        }
+    }
 });
 
 previousPageBtn.addEventListener("click", function (e) {

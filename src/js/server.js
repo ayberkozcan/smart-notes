@@ -39,6 +39,17 @@ db.run(`
     )
 `);
 
+db.run(`
+    CREATE TABLE IF NOT EXISTS todos (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
+        title TEXT NOT NULL,
+        category TEXT,
+        isDone BOOLEAN,
+        created_date TEXT DEFAULT (datetime('now'))
+    )    
+`);
+
 app.use(express.json());
 app.use(cors());
 
@@ -95,6 +106,15 @@ app.post("/login", (req, res) => {
 
 app.get("/notes", (req, res) => {
     db.all("SELECT * FROM notes WHERE user_id = ? AND private = 0 ORDER BY created_date DESC", [id], (err, rows) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        res.json(rows);
+    });
+});
+
+app.get("/todos", (req, res) => {
+    db.all("SELECT * FROM todos WHERE user_id = ? ORDER BY created_date DESC", [id], (err, rows) => {
         if (err) {
             return res.status(500).json({ error: err.message });
         }
@@ -180,6 +200,23 @@ app.post("/add-note", (req, res) => {
                 return res.status(500).json({ error: err.message });
             }
             res.json({ message: "Note added successfully", id: this.lastID });
+        }
+    );
+});
+
+app.post("/add-todo", (req, res) => {
+    const { title, category } = req.body;
+    const date = new Date().toLocaleString();
+    const isDone = 0;
+
+    db.run(
+        "INSERT INTO todos (user_id, title, category, isDone, created_date) VALUES (?, ?, ?, ?, ?)",
+        [id, title, category, isDone, date],
+        function (err) {
+            if (err) {
+                return res.status(500).json({ error: err.message });
+            }
+            res.json({ message: "Todo added successfully", id: this.lastID });
         }
     );
 });
