@@ -316,6 +316,21 @@ app.post("/edit-category", (req, res) => {
     });
 });
 
+app.post("/task-toggle/:id", (req, res) => {
+    const todoId = req.params.id;
+    const { isDone } = req.body;
+
+    db.run("UPDATE todos SET isDone = ? WHERE id = ?",
+        [isDone, todoId],
+        function (err) {
+            if (err) {
+                return res.status(500).json({ error: err.message });
+            }
+            res.json({ message: "Successful", id });
+        }
+    );
+});
+
 app.post("/add-category", (req, res) => {
     const { name } = req.body;
 

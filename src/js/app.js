@@ -218,41 +218,48 @@ function renderToDos() {
 }
 
 function drawTodos(todos) {
+    const todoContent = document.getElementById("to-do-content");
     todoContent.innerHTML = "";
 
     if (todos.length === 0) {
         const emptyRow = document.createElement("tr");
-        emptyRow.innerHTML = `<td colspan="4" class="text-center">No data found!</td>`;
+        emptyRow.innerHTML = `<td colspan="1" class="text-center">No data found!</td>`;
         todoContent.appendChild(emptyRow);
     } else {
         todos.forEach(item => {
             const row = document.createElement("tr");
+
             row.innerHTML = `
-                <td>${item.isDone}</td>
-                <td>${item.title}</td>
-                <td style="background-color:green;">${item.category}</td>
-                <td class="d-flex justify-content-center gap-3">
-                    <input type="checkbox" id="myCheck" data-id="${item.id}">
-                    <span>${item.title}</span>
-                    <span>${item.category}</span>
+                <td>
+                    <input type="checkbox" data-id="${item.id}" ${item.isDone == 1 ? "checked" : ""}>
+                    <span class="${item.isDone == 1 ? "line-through" : ""}">${item.title}</span>
                 </td>
             `;
 
-            // const deleteTodoBtn = row.querySelector(".deleteTodoBtn");
-            // deleteTodoBtn.addEventListener("click", function() {
-            //     fetch(`http://localhost:3000/delete-todo/${todo.id}`, { method: "DELETE" })
-            //         .then(response => response.json())
-            //         .then(() => {
-            //             renderToDos();
-            //         })
-            //         .catch(err => console.error("Error:", err));
+            const checkbox = row.querySelector('input[type="checkbox"]');
+            const span = row.querySelector('span');
 
-            // });
+            checkbox.addEventListener("change", (e) => {
+                const isChecked = checkbox.checked;
+                span.classList.toggle("line-through", isChecked);
 
-            // const editNoteBtn = row.querySelector(".editNoteBtn");
-            // editNoteBtn.addEventListener("click", function() {
-            //     window.location.href = `editnotepage.html?id=${item.id}`;
-            // });
+                fetch(`http://localhost:3000/task-toggle/${item.id}`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        isDone: isChecked ? 1 : 0
+                    })
+                })
+                .then(res => res.json())
+                .then(data => console.log("Updated:", data))
+                .catch(err => {
+                    console.error("Error:", err);
+                    checkbox.checked = !isChecked;
+                    span.classList.toggle("line-through", !isChecked);
+                });
+            });
 
             todoContent.appendChild(row);
         });

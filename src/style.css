@@ -17,7 +17,7 @@ h3 {
     color: #333;
 }
 
-.cards, .info, .info-edit, .preview, .preview-homepage {
+.cards, .info, .info-edit, .preview, .preview-homepage, .todo {
     height: 100%;
     background-color: rgba(238, 238, 238, 0.9);
     padding: 20px;
@@ -32,7 +32,7 @@ h3 {
     width: 75%;
 }
 
-.info {
+.info, .todo {
     background-color: rgba(210, 255, 253, 0.7);
     width: 75%;
 }
@@ -46,7 +46,7 @@ h3 {
     background-color: rgba(192, 192, 192, 0.7);
 }
 
-.cards > div, .info > div {
+.cards > div, .info > div, .todo > div {
     flex: 1;
     padding: 5px;
     margin-bottom: 10px;
@@ -251,4 +251,23 @@ button:hover {
   border-radius: 10px;
   width: 70%;
   max-width: 600px;
+}
+
+.cards-button button {
+    width: 100%;
+    height: 40px;
+    font-size: 20px;
+    padding: 0;
+}
+
+.line-through {
+    text-decoration: line-through;
+}
+
+#to-do-content tr {
+    background-color: transparent;
+}
+
+#to-do-content td {
+    background-color: transparent;
 }
