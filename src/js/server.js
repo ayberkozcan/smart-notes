@@ -44,7 +44,6 @@ db.run(`
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER,
         title TEXT NOT NULL,
-        category TEXT,
         isDone BOOLEAN,
         created_date TEXT DEFAULT (datetime('now'))
     )    
@@ -205,13 +204,13 @@ app.post("/add-note", (req, res) => {
 });
 
 app.post("/add-todo", (req, res) => {
-    const { title, category } = req.body;
+    const { title } = req.body;
     const date = new Date().toLocaleString();
     const isDone = 0;
 
     db.run(
-        "INSERT INTO todos (user_id, title, category, isDone, created_date) VALUES (?, ?, ?, ?, ?)",
-        [id, title, category, isDone, date],
+        "INSERT INTO todos (user_id, title, isDone, created_date) VALUES (?, ?, ?, ?)",
+        [id, title, isDone, date],
         function (err) {
             if (err) {
                 return res.status(500).json({ error: err.message });

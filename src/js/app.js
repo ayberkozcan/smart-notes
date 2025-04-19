@@ -209,7 +209,6 @@ function renderToDos() {
     fetch(`http://localhost:3000/todos`)
         .then(response => response.json())
         .then(todos => {
-            console.log(todos);
             todosData = todos;
             displayedTodos = [...todosData];
             drawTodos(todosData);
@@ -223,7 +222,7 @@ function drawTodos(todos) {
 
     if (todos.length === 0) {
         const emptyRow = document.createElement("tr");
-        emptyRow.innerHTML = `<td colspan="1" class="text-center">No data found!</td>`;
+        emptyRow.innerHTML = `<td colspan="1" class="text-center text-muted">No tasks found!</td>`;
         todoContent.appendChild(emptyRow);
     } else {
         todos.forEach(item => {
@@ -232,7 +231,7 @@ function drawTodos(todos) {
             row.innerHTML = `
                 <td>
                     <input type="checkbox" data-id="${item.id}" ${item.isDone == 1 ? "checked" : ""}>
-                    <span class="${item.isDone == 1 ? "line-through" : ""}">${item.title}</span>
+                    <span class="${item.isDone == 1 ? "line-through" : ""}" style="padding: 5px;">${item.title}</span>
                 </td>
             `;
 
@@ -289,35 +288,32 @@ document.getElementById("createNoteBtn").addEventListener("click", function(e) {
 });
 
 document.getElementById("addTodo").addEventListener("click", function (e) {
-    let title = prompt("Enter task name: ");
-    if (title.length > 50) {
-        alert("Name cannot be longer than 50 characters");
+    if (todosData.length == 6) {
+        alert("You've reached to do limit!");
     } else {
-        if (title && title.trim() !== "") {
-            let category = prompt("Enter category: ");
-            if (category.length > 20) {
-                alert("Category cannot be longer than 20 characters");
-            } else {
-                if (category && category.trim() !== "") {
-                    fetch(`http://localhost:3000/add-todo`, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ title: title.trim(), category: category.trim() })
-                    })
-                    .then(response => {
-                        if (!response.ok) {
-                            return response.json().then(err => { throw new Error(err.error); });
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        alert("Task added successfully!");
-                        renderToDos();
-                    })
-                    .catch(err => {
-                        alert("Error: " + err.message);
-                    });
-                }
+        let title = prompt("Enter task name: ");
+        if (title.length > 50) {
+            alert("Name cannot be longer than 50 characters");
+        } else {
+            if (title && title.trim() !== "") {
+                fetch(`http://localhost:3000/add-todo`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ title: title.trim() })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(err => { throw new Error(err.error); });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    alert("Task added successfully!");
+                    renderToDos();
+                })
+                .catch(err => {
+                    alert("Error: " + err.message);
+                });
             }
         }
     }
