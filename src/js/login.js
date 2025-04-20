@@ -55,8 +55,8 @@ function checkInputsForLogin(inputs) {
                 };
                 localStorage.setItem('userData', JSON.stringify(userData));
             }
-            const now = Date.now();
-            localStorage.setItem("welcomePopupTime", now);
+            // const now = Date.now();
+            // localStorage.setItem("welcomePopupTime", now);
             alert("Login Successful!");
             window.location.href = "homepage.html";
         } else {
