@@ -271,3 +271,24 @@ button:hover {
 #to-do-content td {
     background-color: transparent;
 }
+
+#todoTable {
+    table-layout: fixed;
+    width: 100%;
+}
+
+#todoTable th,
+#todoTable td {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: middle;
+    max-width: 0;
+}
+
+#todoTable td.todo-action {
+    width: 30px;
+    min-width: 30px;
+    max-width: 40px;
+    text-align: right;
+}

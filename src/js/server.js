@@ -167,6 +167,16 @@ app.delete("/delete-note/:id", (req, res) => {
     });
 });
 
+app.delete("/delete-todo/:id", (req, res) => {
+    const { id } = req.params;
+    db.run("DELETE FROM todos WHERE id = ?", [id], function (err) {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        res.json({ message: "Task deleted successfully. "});
+    });
+});
+
 app.get("/get-categories", (req, res) => {
     
     db.get("SELECT categories FROM users WHERE id = ?", [id], (err, row) => {

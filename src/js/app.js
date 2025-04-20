@@ -230,9 +230,22 @@ function drawTodos(todos) {
 
             row.innerHTML = `
                 <td>
-                    <input type="checkbox" data-id="${item.id}" ${item.isDone == 1 ? "checked" : ""}>
-                    <span class="${item.isDone == 1 ? "line-through" : ""}" style="padding: 5px;">${item.title}</span>
+                    <div class="d-flex align-items-center justify-content-between gap-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="form-check m-0">
+                                <input class="form-check-input todoCheck" type="checkbox" role="switch" data-id="${item.id}" ${item.isDone == 1 ? "checked" : ""}>
+                            </div>
+                            <span class="${item.isDone == 1 ? "line-through" : ""}">${item.title}</span>
+                        </div>
+                    </div>
                 </td>
+                <td class="todo-action">
+                    <button type="button" class="btn btn-outline-danger p-0 d-flex align-items-center justify-content-center rounded-circle deleteTodoBtn"
+                            style="width: 20px; height: 20px; font-size: 10px;" data-id="${item.id}">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </td>
+
             `;
 
             const checkbox = row.querySelector('input[type="checkbox"]');
@@ -258,6 +271,16 @@ function drawTodos(todos) {
                     checkbox.checked = !isChecked;
                     span.classList.toggle("line-through", !isChecked);
                 });
+            });
+
+            const deleteTodoBtn = row.querySelector(".deleteTodoBtn");
+            deleteTodoBtn.addEventListener("click", function() {
+                fetch(`http://localhost:3000/delete-todo/${item.id}`, { method: "DELETE" })
+                    .then(response => response.json())
+                    .then(() => {
+                        renderNotes();
+                    })
+                    .catch(err => console.error("Error:", err));
             });
 
             todoContent.appendChild(row);
@@ -291,9 +314,9 @@ document.getElementById("addTodo").addEventListener("click", function (e) {
     if (todosData.length == 6) {
         alert("You've reached to do limit!");
     } else {
-        let title = prompt("Enter task name: ");
+        let title = prompt("Enter task: ");
         if (title.length > 50) {
-            alert("Name cannot be longer than 50 characters");
+            alert("Task cannot be longer than 50 characters");
         } else {
             if (title && title.trim() !== "") {
                 fetch(`http://localhost:3000/add-todo`, {
@@ -308,7 +331,7 @@ document.getElementById("addTodo").addEventListener("click", function (e) {
                     return response.json();
                 })
                 .then(data => {
-                    alert("Task added successfully!");
+                    // alert("Task added successfully!");
                     renderToDos();
                 })
                 .catch(err => {
