@@ -22,6 +22,7 @@ db.run(`
         username TEXT NOT NULL UNIQUE,
         password TEXT NOT NULL,
         categories TEXT DEFAULT '["None", "Personal", "Work", "Ideas", "Other"]',
+        friends TEXT,
         created_date TEXT DEFAULT (datetime('now'))
     )
 `);

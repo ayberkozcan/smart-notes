@@ -15,9 +15,17 @@ const pageNumber = document.getElementById("pageNumber");
 const todoContent = document.getElementById("to-do-content");
 const addTodo = document.getElementById("addTodo");
 
+const welcomePopup = document.getElementById("welcomePopup");
+const welcomePopupContent = document.getElementById("welcomePopupContent");
+
+const sharedNotesBtn = document.getElementById("sharedNotesBtn");
+const tableHeader = document.getElementById("tableHeader");
+const createNoteBtn = document.getElementById("createNoteBtn");
+
 let currentPage = 1;
 
 let hiddenNotesShow = false;
+let sharedNotesShow = false;
 
 let notesData = [];
 let sortField = null;
@@ -33,42 +41,35 @@ if (localStorage.getItem("theme") === "dark") {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    const welcomePopup = document.getElementById("welcomePopup");
-    const welcomePopupContent = document.getElementById("welcomePopupContent");
-    const username = "asd"; // Change later
+    const username = "asd";
 
-    if (!localStorage.getItem("welcomePopupTime")) {
-        const now = Date.now();
-        localStorage.setItem("welcomePopupTime", now);
-    } else {
-        const savedTime = localStorage.getItem("welcomePopupTime");
-
-        if (savedTime) {
-            const now = Date.now();
-            const elapsed = now - parseInt(savedTime);
-            const tenMinutes = 10 * 60 * 1000;
-            
-            if (elapsed > tenMinutes) {
-                welcomePopupContent.textContent = `Welcome ${username}!`;
-    
-                welcomePopup.style.display = "block";
-                welcomePopup.classList.remove("fade-out");
-                welcomePopup.classList.add("fade-in");
-    
-                setTimeout(() => {
-                    welcomePopup.classList.remove("fade-in");
-                    welcomePopup.classList.add("fade-out");
-                    setTimeout(() => {
-                        welcomePopup.style.display = "none";
-                    }, 300);
-                }, 2000);
-    
-                // localStorage.removeItem("welcomePopupTime");
-            } else {
-                welcomePopup.style.display = "none";
-            }
-        }
+    if (sessionStorage.getItem("welcomeShown")) {
+        welcomePopup.style.display = "none";
     }
+    else {
+        welcomePopupContent.textContent = `Welcome ${username}!`;
+
+        welcomePopup.style.display = "block";
+        welcomePopup.classList.remove("fade-out");
+        welcomePopup.classList.add("fade-in");
+
+        setTimeout(() => {
+            welcomePopup.classList.remove("fade-in");
+            welcomePopup.classList.add("fade-out");
+            setTimeout(() => {
+                welcomePopup.style.display = "none";
+            }, 300);
+        }, 2000);
+
+        sessionStorage.setItem("welcomeShown", "true");
+    }
+});
+
+sharedNotesBtn.addEventListener("click", function () {
+    sharedNotesShow = sharedNotesShow ? false : true;
+    tableHeader.innerText = sharedNotesShow ? "Shared Notes" : "My Notes";
+    createNoteBtn.innerText = sharedNotesShow ? "Create a Shared Note" : "Create Note";
+    renderNotes();
 });
 
 document.getElementById("searchInput").addEventListener("input", function () {
@@ -86,8 +87,18 @@ document.getElementById("searchInput").addEventListener("input", function () {
 function renderNotes() {
     tbody.innerHTML = "";
 
-    let path = !hiddenNotesShow ? "notes" : "notes-private";
-
+    let path = "";
+    // let path = !hiddenNotesShow ? "notes" : "notes-private";
+    if (hiddenNotesShow) {
+        path = "notes-private";
+    } else {
+        if (!sharedNotesShow) {
+            path = "notes";
+        } else if (sharedNotesShow) {
+            path = "notes-shared";
+        }
+    }
+    
     fetch(`http://localhost:3000/${path}`)
         .then(response => response.json())
         .then(notes => {
@@ -116,22 +127,42 @@ function drawNotes(notes) {
             index = 9 * (currentPage - 1);
         notes.slice(index, 9 * currentPage).forEach(item => {
             const row = document.createElement("tr");
-            row.innerHTML = `
-                <td>${item.title}</td>
-                <td>${item.category}</td>
-                <td>${item.created_date}</td>
-                <td class="d-flex justify-content-center gap-3">
-                    <button type="button" class="btn btn-info btn-sm viewNoteBtn" data-id="${item.id}">
-                        <i class="fa-solid fa-eye"></i>
-                    </button>
-                    <button type="button" class="btn btn-success btn-sm editNoteBtn" data-id="${item.id}">
-                        <i class="fa-solid fa-pen"></i>
-                    </button>
-                    <button type="button" class="btn btn-danger btn-sm deleteNoteBtn" data-id="${item.id}">
-                        <i class="fa-solid fa-trash"></i>
-                    </button>
-                </td>
-            `;
+            if (!sharedNotesShow) {
+                row.innerHTML = `
+                    <td>${item.title}</td>
+                    <td>${item.category}</td>
+                    <td>${item.created_date}</td>
+                    <td class="d-flex justify-content-center gap-3">
+                        <button type="button" class="btn btn-info btn-sm viewNoteBtn" data-id="${item.id}">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                        <button type="button" class="btn btn-success btn-sm editNoteBtn" data-id="${item.id}">
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
+                        <button type="button" class="btn btn-danger btn-sm deleteNoteBtn" data-id="${item.id}">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+            } else {
+                row.innerHTML = `
+                    <td>${item.title}</td>
+                    <td>${item.category}</td>
+                    <td>${item.created_date}</td>
+                    <td>${item.partner}</td>
+                    <td class="d-flex justify-content-center gap-3">
+                        <button type="button" class="btn btn-info btn-sm viewNoteBtn" data-id="${item.id}">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                        <button type="button" class="btn btn-success btn-sm editNoteBtn" data-id="${item.id}">
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
+                        <button type="button" class="btn btn-danger btn-sm deleteNoteBtn" data-id="${item.id}">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+            }
 
             const deleteNoteBtn = row.querySelector(".deleteNoteBtn");
             deleteNoteBtn.addEventListener("click", function() {
@@ -317,7 +348,7 @@ document.getElementById("createNoteBtn").addEventListener("click", function(e) {
 
 document.getElementById("addTodo").addEventListener("click", function (e) {
     if (todosData.length == 6) {
-        alert("You've reached to do limit!");
+        alert("You've reached task limit!");
     } else {
         let title = prompt("Enter task: ");
         if (title.length > 50) {
