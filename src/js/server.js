@@ -22,6 +22,7 @@ db.run(`
         username TEXT NOT NULL UNIQUE,
         password TEXT NOT NULL,
         categories TEXT DEFAULT '["None", "Personal", "Work", "Ideas", "Other"]',
+        friends_request TEXT,
         friends TEXT,
         created_date TEXT DEFAULT (datetime('now'))
     )
@@ -227,6 +228,21 @@ app.post("/add-todo", (req, res) => {
                 return res.status(500).json({ error: err.message });
             }
             res.json({ message: "Todo added successfully", id: this.lastID });
+        }
+    );
+});
+
+app.post("/add-friends", (req, res) => {
+    const { username } = req.body;
+
+    db.run(
+        "UPDATE users SET friend_requests = ? WHERE id = ?",
+        [username, id],
+        function (err) {
+            if (err) {
+                return res.status(500).json({ error: err.message });
+            }
+            res.json({ message: "Friend request successfully created", id });
         }
     );
 });

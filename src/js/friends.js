@@ -18,25 +18,25 @@ document.getElementById("addFriendBtn").addEventListener("click", function () {
     } else {
         let username = prompt("Enter username: ");
         if (username && username.trim() !== "") {
-            // fetch(`http://localhost:3000/add-friend`, {
-            //     method: "POST",
-            //     headers: { "Content-Type": "application/json" },
-            //     body: JSON.stringify({ username: username.trim() })
-            // })
-            // .then(response => {
-            //     if (!response.ok) {
-            //         alert("Username not found!");
-            //         return response.json().then(err => { throw new Error(err.error); });
-            //     }
-            //     return response.json();
-            // })
-            // .then(data => {
-            //     alert("Friendship request sent successfully!");
-            //     // renderFriends();
-            // })
-            // .catch(err => {
-            //     alert("Error: " + err.message);
-            // });
+            fetch(`http://localhost:3000/add-friend`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username: username.trim() })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    alert("Username not found!");
+                    return response.json().then(err => { throw new Error(err.error); });
+                }
+                return response.json();
+            })
+            .then(data => {
+                alert("Friendship request sent successfully!");
+                // renderFriends();
+            })
+            .catch(err => {
+                alert("Error: " + err.message);
+            });
         }
     }
 });
