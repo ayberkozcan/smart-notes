@@ -22,7 +22,8 @@ db.run(`
         username TEXT NOT NULL UNIQUE,
         password TEXT NOT NULL,
         categories TEXT DEFAULT '["None", "Personal", "Work", "Ideas", "Other"]',
-        friends_request TEXT,
+        friend_requests TEXT,
+        pending_request TEXT,
         friends TEXT,
         created_date TEXT DEFAULT (datetime('now'))
     )
@@ -245,6 +246,55 @@ app.post("/add-friends", (req, res) => {
             res.json({ message: "Friend request successfully created", id });
         }
     );
+});
+
+app.post("/add-friends", (req, res) => {
+    const { name } = req.body;
+
+    db.get("SELECT friend_requests FROM users WHERE id = ?", [id], (err, row1) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (!row1) return res.status(404).json({ error: "User not found (sender)" });
+
+        let friendRequests = JSON.parse(row1.friend_requests || "[]");
+
+        if (friendRequests.includes(name)) {
+            return res.status(400).json({ error: "This request already exists!" });
+        }
+
+        friendRequests.push(name);
+
+        db.run("UPDATE users SET friend_requests = ? WHERE id = ?",
+            [JSON.stringify(friendRequests), id], function (err) {
+                if (err) return res.status(500).json({ error: err.message });
+
+                db.get("SELECT pending_requests FROM users WHERE username = ?", [name], (err, row2) => {
+                    if (err) return res.status(500).json({ error: err.message });
+                    if (!row2) return res.status(404).json({ error: "User not found (receiver)" });
+
+                    let pendingRequests = JSON.parse(row2.pending_requests || "[]");
+
+                    db.get("SELECT username FROM users WHERE id = ?", [id], (err, row3) => {
+                        if (err) return res.status(500).json({ error: err.message });
+                        if (!row3) return res.status(404).json({ error: "Sender username not found" });
+
+                        const senderUsername = row3.username;
+
+                        if (pendingRequests.includes(senderUsername)) {
+                            return res.status(400).json({ error: "This pending request already exists!" });
+                        }
+
+                        pendingRequests.push(senderUsername);
+
+                        db.run("UPDATE users SET pending_requests = ? WHERE username = ?",
+                            [JSON.stringify(pendingRequests), name], function (err) {
+                                if (err) return res.status(500).json({ error: err.message });
+
+                                res.json({ message: "Request successfully sent!" });
+                            });
+                    });
+                });
+            });
+    });
 });
 
 app.get("/get-note-count", (req, res) => {

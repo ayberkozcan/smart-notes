@@ -3,10 +3,49 @@ const friendsContent = document.getElementById("friendsContent");
 let friendsData = []; // Change later
 
 function renderFriends() {
+    fetch(`http://localhost:3000/get-friends`)
+        .then(response => response.json())
+        .then(friends => {
+            friendsData = friends;
+            drawFriends(friendsData);
+        })
+        .catch(err => console.error("Error fetching friends:", err));
+}
+
+function drawNotes(friends) {
+    friendsContent.innerHTML = ""; 
+
     if (friendsData.length == 0) {
         const row = document.createElement("span");
         row.innerHTML = `You have no friends!`;
         friendsContent.appendChild(row);
+    } else {
+        friends.forEach(item => {
+            const row = document.createElement("div");
+            row.innerHTML = `
+                <div>
+                    <span>${item.username}</span>
+                    <button type="button" data-id="${item.id}">
+                        <i class="fa-solid fa-user-minus"></i>
+                    </button>
+                </div>
+            `;
+
+            const deleteFriendBtn = row.querySelector(".deleteFriendBtn");
+            deleteFriendBtn.addEventListener("click", function() {
+                const confirmation = window.confirm("Are you sure you want to remove this friend?");
+                if (confirmation) {
+                    fetch(`http://localhost:3000/remove-friend/${item.id}`, { method: "DELETE" })
+                        .then(response => response.json())
+                        .then(() => {
+                            alert("Friend deleted.");
+                            renderNotes();
+                        })
+                        .catch(err => console.error("Error:", err));
+                }
+            });
+
+        });
     }
 }
 
