@@ -198,7 +198,27 @@ app.get("/get-categories", (req, res) => {
 
         res.json(categories);
     })
-})
+});
+
+app.get("/get-friends", (req, res) => {
+    
+    db.get("SELECT friends FROM users WHERE id = ?", [id], (err, row) => {
+        if (err) {
+            return res.status(500).json({ error: "Database error: " + err.message });
+        }
+
+        let friends = [];
+        if (row?.friends) {
+            try {
+                friends = JSON.parse(row.friends);
+            } catch {
+                friends = row.friends.split(",");
+            }
+        }
+
+        res.json(friends);
+    })
+});
 
 app.post("/add-note", (req, res) => {
     const { title, content, category, color, isPrivate } = req.body;
@@ -233,24 +253,9 @@ app.post("/add-todo", (req, res) => {
     );
 });
 
-app.post("/add-friends", (req, res) => {
-    const { username } = req.body;
-
-    db.run(
-        "UPDATE users SET friend_requests = ? WHERE id = ?",
-        [username, id],
-        function (err) {
-            if (err) {
-                return res.status(500).json({ error: err.message });
-            }
-            res.json({ message: "Friend request successfully created", id });
-        }
-    );
-});
-
-app.post("/add-friends", (req, res) => {
+app.post("/add-friend", (req, res) => {
     const { name } = req.body;
-
+    
     db.get("SELECT friend_requests FROM users WHERE id = ?", [id], (err, row1) => {
         if (err) return res.status(500).json({ error: err.message });
         if (!row1) return res.status(404).json({ error: "User not found (sender)" });

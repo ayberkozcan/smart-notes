@@ -12,9 +12,9 @@ function renderFriends() {
         .catch(err => console.error("Error fetching friends:", err));
 }
 
-function drawNotes(friends) {
+function drawFriends(friends) {
     friendsContent.innerHTML = ""; 
-
+    console.log(friendsData)
     if (friendsData.length == 0) {
         const row = document.createElement("span");
         row.innerHTML = `You have no friends!`;
@@ -39,7 +39,7 @@ function drawNotes(friends) {
                         .then(response => response.json())
                         .then(() => {
                             alert("Friend deleted.");
-                            renderNotes();
+                            renderFriends();
                         })
                         .catch(err => console.error("Error:", err));
                 }
@@ -52,15 +52,15 @@ function drawNotes(friends) {
 renderFriends();
 
 document.getElementById("addFriendBtn").addEventListener("click", function () {
-    if (friendsData.length == 10) { // Change it to 10
+    if (friendsData.length == 10) {
         alert("You've reached friend limit!");
     } else {
-        let username = prompt("Enter username: ");
-        if (username && username.trim() !== "") {
+        let name = prompt("Enter username: ");
+        if (name && name.trim() !== "") {
             fetch(`http://localhost:3000/add-friend`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ username: username.trim() })
+                body: JSON.stringify({ name: name.trim() })
             })
             .then(response => {
                 if (!response.ok) {
