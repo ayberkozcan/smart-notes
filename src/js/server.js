@@ -38,6 +38,7 @@ db.run(`
         category TEXT,
         color TEXT,
         private BOOLEAN,
+        shared_user TEXT,
         created_date TEXT DEFAULT (datetime('now'))
     )
 `);
@@ -200,25 +201,25 @@ app.get("/get-categories", (req, res) => {
     })
 });
 
-app.get("/get-friends", (req, res) => {
+// app.get("/get-friends", (req, res) => {
     
-    db.get("SELECT friends FROM users WHERE id = ?", [id], (err, row) => {
-        if (err) {
-            return res.status(500).json({ error: "Database error: " + err.message });
-        }
+//     db.get("SELECT friends FROM users WHERE id = ?", [id], (err, row) => {
+//         if (err) {
+//             return res.status(500).json({ error: "Database error: " + err.message });
+//         }
 
-        let friends = [];
-        if (row?.friends) {
-            try {
-                friends = JSON.parse(row.friends);
-            } catch {
-                friends = row.friends.split(",");
-            }
-        }
+//         let friends = [];
+//         if (row?.friends) {
+//             try {
+//                 friends = JSON.parse(row.friends);
+//             } catch {
+//                 friends = row.friends.split(",");
+//             }
+//         }
 
-        res.json(friends);
-    })
-});
+//         res.json(friends);
+//     })
+// });
 
 app.post("/add-note", (req, res) => {
     const { title, content, category, color, isPrivate } = req.body;
@@ -227,6 +228,22 @@ app.post("/add-note", (req, res) => {
     db.run(
         "INSERT INTO notes (user_id, title, content, category, color, private, created_date) VALUES (?, ?, ?, ?, ?, ?, ?)",
         [id, title, content, category, color, isPrivate ? 1 : 0, date],
+        function (err) {
+            if (err) {
+                return res.status(500).json({ error: err.message });
+            }
+            res.json({ message: "Note added successfully", id: this.lastID });
+        }
+    );
+});
+
+app.post("/add-shared-note", (req, res) => {
+    const { title, content, category, color, username } = req.body;
+    const date = new Date().toLocaleString();
+    console.log(username);
+    db.run(
+        "INSERT INTO notes (user_id, title, content, category, color, private, shared_user, created_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        [id, title, content, category, color, 0, username, date],
         function (err) {
             if (err) {
                 return res.status(500).json({ error: err.message });
@@ -253,54 +270,54 @@ app.post("/add-todo", (req, res) => {
     );
 });
 
-app.post("/add-friend", (req, res) => {
-    const { name } = req.body;
+// app.post("/add-friend", (req, res) => {
+//     const { name } = req.body;
     
-    db.get("SELECT friend_requests FROM users WHERE id = ?", [id], (err, row1) => {
-        if (err) return res.status(500).json({ error: err.message });
-        if (!row1) return res.status(404).json({ error: "User not found (sender)" });
+//     db.get("SELECT friend_requests FROM users WHERE id = ?", [id], (err, row1) => {
+//         if (err) return res.status(500).json({ error: err.message });
+//         if (!row1) return res.status(404).json({ error: "User not found (sender)" });
 
-        let friendRequests = JSON.parse(row1.friend_requests || "[]");
+//         let friendRequests = JSON.parse(row1.friend_requests || "[]");
 
-        if (friendRequests.includes(name)) {
-            return res.status(400).json({ error: "This request already exists!" });
-        }
+//         if (friendRequests.includes(name)) {
+//             return res.status(400).json({ error: "This request already exists!" });
+//         }
 
-        friendRequests.push(name);
+//         friendRequests.push(name);
 
-        db.run("UPDATE users SET friend_requests = ? WHERE id = ?",
-            [JSON.stringify(friendRequests), id], function (err) {
-                if (err) return res.status(500).json({ error: err.message });
+//         db.run("UPDATE users SET friend_requests = ? WHERE id = ?",
+//             [JSON.stringify(friendRequests), id], function (err) {
+//                 if (err) return res.status(500).json({ error: err.message });
 
-                db.get("SELECT pending_requests FROM users WHERE username = ?", [name], (err, row2) => {
-                    if (err) return res.status(500).json({ error: err.message });
-                    if (!row2) return res.status(404).json({ error: "User not found (receiver)" });
+//                 db.get("SELECT pending_requests FROM users WHERE username = ?", [name], (err, row2) => {
+//                     if (err) return res.status(500).json({ error: err.message });
+//                     if (!row2) return res.status(404).json({ error: "User not found (receiver)" });
 
-                    let pendingRequests = JSON.parse(row2.pending_requests || "[]");
+//                     let pendingRequests = JSON.parse(row2.pending_requests || "[]");
 
-                    db.get("SELECT username FROM users WHERE id = ?", [id], (err, row3) => {
-                        if (err) return res.status(500).json({ error: err.message });
-                        if (!row3) return res.status(404).json({ error: "Sender username not found" });
+//                     db.get("SELECT username FROM users WHERE id = ?", [id], (err, row3) => {
+//                         if (err) return res.status(500).json({ error: err.message });
+//                         if (!row3) return res.status(404).json({ error: "Sender username not found" });
 
-                        const senderUsername = row3.username;
+//                         const senderUsername = row3.username;
 
-                        if (pendingRequests.includes(senderUsername)) {
-                            return res.status(400).json({ error: "This pending request already exists!" });
-                        }
+//                         if (pendingRequests.includes(senderUsername)) {
+//                             return res.status(400).json({ error: "This pending request already exists!" });
+//                         }
 
-                        pendingRequests.push(senderUsername);
+//                         pendingRequests.push(senderUsername);
 
-                        db.run("UPDATE users SET pending_requests = ? WHERE username = ?",
-                            [JSON.stringify(pendingRequests), name], function (err) {
-                                if (err) return res.status(500).json({ error: err.message });
+//                         db.run("UPDATE users SET pending_requests = ? WHERE username = ?",
+//                             [JSON.stringify(pendingRequests), name], function (err) {
+//                                 if (err) return res.status(500).json({ error: err.message });
 
-                                res.json({ message: "Request successfully sent!" });
-                            });
-                    });
-                });
-            });
-    });
-});
+//                                 res.json({ message: "Request successfully sent!" });
+//                             });
+//                     });
+//                 });
+//             });
+//     });
+// });
 
 app.get("/get-note-count", (req, res) => {
     

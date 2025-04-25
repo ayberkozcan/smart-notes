@@ -17,6 +17,10 @@ const categoriesSelectBox = document.getElementById("category");
 const noteCount = document.getElementById("note-count");
 const favCategory = document.getElementById("fav-category");
 
+const checkboxShare = document.getElementById("checkboxShare");
+const inputShare = document.getElementById("inputShare");
+const shareUsername = document.getElementById("shareUsername");
+
 let noteSuccess = false;
 
 function renderCategories() {
@@ -72,13 +76,24 @@ function success(input) {
     input.className = "form-control is-valid"
 }
 
-function checkRequired(title) {  
-    if (title.value === "") {
-        error(title, `Title is required!`);
+function checkRequired(input) {  
+    if (input.value === "") {
+        error(input, `Title is required!`);
+        if (checkboxShare.checked && shareUsername.value === "") {
+            error(shareUsername, `Username is required!`);
+        } else {
+            success(shareUsername);
+        }
         noteSuccess = false;
     } else {
         success(title);
-        noteSuccess = true;
+        if (checkboxShare.checked && shareUsername.value === "") {
+            error(shareUsername, `Username is required!`);
+            noteSuccess = false;
+        } else {
+            success(shareUsername);
+            noteSuccess = true;
+        }
     }
 }
 
@@ -98,9 +113,6 @@ content.addEventListener("input", function () {
 });
 
 category.addEventListener("change", function () {
-    // let selectedText = category.options[category.selectedIndex].text;
-    // previewCategory.innerHTML = selectedText;
-
     previewCategory.innerText = category.value;
 });
 
@@ -130,15 +142,36 @@ color.addEventListener("change", function () {
 });
 
 checkbox.addEventListener("change", function () {
-    previewHidden.innerHTML = checkbox.checked ? `<i class="fa-solid fa-lock" style="padding: 5px;"></i>` : ``;
+    if (this.checked) {
+        checkboxShare.checked = false;
+        inputShare.style.display = "none";
+        document.getElementById("shareUsername").value = "";
+    }
+
+    previewHidden.innerHTML = this.checked
+        ? `<i class="fa-solid fa-lock" style="padding: 5px;"></i>`
+        : ``;
+});
+
+checkboxShare.addEventListener("change", function () {
+    if (this.checked) {
+        checkbox.checked = false;
+        previewHidden.innerHTML = "";
+        inputShare.style.display = "flex";
+    } else {
+        inputShare.style.display = "none";
+        document.getElementById("shareUsername").value = "";
+    }
 });
 
 form.addEventListener("submit", function(e) {
     e.preventDefault();
     
-    checkRequired(title);
-
+    checkRequired(title, 'Title');
+    
     if (noteSuccess) {
+        let path = !checkboxShare.checked ? "add-note" : "add-shared-note"; 
+
         const noteData = {
             title: title.value,
             content: content.value,
@@ -147,7 +180,7 @@ form.addEventListener("submit", function(e) {
             isPrivate: checkbox.checked
         };
 
-        fetch("http://localhost:3000/add-note", {
+        fetch(`http://localhost:3000/${path}`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"

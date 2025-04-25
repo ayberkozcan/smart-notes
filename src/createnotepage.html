@@ -22,6 +22,15 @@
             background-color: #fdfdfd;
             transition: box-shadow 0.3s ease-in-out;
         }
+        #shareUsername {
+            width: 30%;
+            box-sizing: border-box;
+            border-radius: 8px;
+            border: 1px solid #ced4da;
+            padding: 3px;
+            background-color: #fdfdfd;
+            transition: box-shadow 0.3s ease-in-out;
+        }
 
         .note-control:focus {
             box-shadow: 0 0 5px rgba(191, 161, 0, 0.5);
@@ -113,6 +122,17 @@
                             <label for="checkbox" class="form-check-label">
                                 Private
                             </label>
+                        </div>
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="checkboxShare">
+                            <label for="checkboxShare" class="form-check-label">
+                                Shared
+                            </label>
+                        </div>
+                        <div class="form-check" id="inputShare" style="display: none;">
+                            <label for="shareUsername" style="margin-right: 8px;">Username:</label>
+                            <input type="text" id="shareUsername" maxlength="50">
+                            <div></div>
                         </div>
                     </div>
                     <hr>
