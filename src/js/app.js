@@ -45,8 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (sessionStorage.getItem("welcomeShown")) {
         welcomePopup.style.display = "none";
-    }
-    else {
+    } else {
         welcomePopupContent.textContent = `Welcome ${username}!`;
 
         welcomePopup.style.display = "block";
@@ -69,6 +68,13 @@ sharedNotesBtn.addEventListener("click", function () {
     sharedNotesShow = sharedNotesShow ? false : true;
     tableHeader.innerText = sharedNotesShow ? "Shared Notes" : "My Notes";
     createNoteBtn.innerText = sharedNotesShow ? "Create a Shared Note" : "Create Note";
+    
+    if (createNoteBtn.innerText == "Create a Shared Note") {
+        createNoteBtn.classList.add("share");
+    } else {
+        createNoteBtn.classList.remove("share");
+    }
+
     renderNotes();
 });
 
@@ -88,7 +94,7 @@ function renderNotes() {
     tbody.innerHTML = "";
 
     let path = "";
-    // let path = !hiddenNotesShow ? "notes" : "notes-private";
+    
     if (hiddenNotesShow) {
         path = "notes-private";
     } else {

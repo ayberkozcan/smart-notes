@@ -116,6 +116,15 @@ app.get("/notes", (req, res) => {
     });
 });
 
+app.get("/notes-shared", (req, res) => {
+    db.all("SELECT * FROM notes WHERE user_id = ? AND private = 0 AND shared_user IS NOT NULL AND shared_user != '' ORDER BY created_date DESC", [id], (err, rows) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        res.json(rows);
+    });
+});
+
 app.get("/todos", (req, res) => {
     db.all("SELECT * FROM todos WHERE user_id = ? ORDER BY created_date DESC", [id], (err, rows) => {
         if (err) {
@@ -238,12 +247,12 @@ app.post("/add-note", (req, res) => {
 });
 
 app.post("/add-shared-note", (req, res) => {
-    const { title, content, category, color, username } = req.body;
+    const { title, content, category, color, isPrivate, username } = req.body;
     const date = new Date().toLocaleString();
     console.log(username);
     db.run(
-        "INSERT INTO notes (user_id, title, content, category, color, private, shared_user, created_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-        [id, title, content, category, color, 0, username, date],
+        "INSERT INTO notes (user_id, title, content, category, color, private, created_date, shared_user) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        [id, title, content, category, color, 0, date, username],
         function (err) {
             if (err) {
                 return res.status(500).json({ error: err.message });
@@ -251,6 +260,20 @@ app.post("/add-shared-note", (req, res) => {
             res.json({ message: "Note added successfully", id: this.lastID });
         }
     );
+});
+
+app.get("/check-username/:username", (req, res) => {
+    const username = req.params.username;
+
+    db.get("SELECT * FROM users WHERE username = ? AND id IS NOT ?", [username, id], function (err, row) {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        if (!row) {
+            return res.json({ found: false });
+        }
+        res.json({ found: true, user: row });
+    });
 });
 
 app.post("/add-todo", (req, res) => {

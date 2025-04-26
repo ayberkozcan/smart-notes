@@ -97,6 +97,23 @@ function checkRequired(input) {
     }
 }
 
+async function checkUsername(username) {
+    try {
+        const response = await fetch(`http://localhost:3000/check-username/${encodeURIComponent(username)}`);
+        const data = await response.json();
+
+        if (!data.found) {
+            alert("User cannot be found!");
+            return false;
+        }
+        
+        return true;
+    } catch (err) {
+        console.error("Error fetching user:", err);
+        return false;
+    }
+}
+
 title.addEventListener("input", function () {
     previewTitle.innerHTML = title.value.trim() === "" ? "..." : title.value;
 });
@@ -164,12 +181,17 @@ checkboxShare.addEventListener("change", function () {
     }
 });
 
-form.addEventListener("submit", function(e) {
+form.addEventListener("submit", async function(e) {
     e.preventDefault();
     
+    if (checkboxShare.checked) {
+        noteSuccess = await checkUsername(shareUsername.value);
+    }
+
     checkRequired(title, 'Title');
-    
+
     if (noteSuccess) {
+        
         let path = !checkboxShare.checked ? "add-note" : "add-shared-note"; 
 
         const noteData = {
@@ -179,6 +201,10 @@ form.addEventListener("submit", function(e) {
             color: color.options[color.selectedIndex].text,
             isPrivate: checkbox.checked
         };
+
+        if (checkboxShare.checked) {
+            noteData.shared = shareUsername.value;
+        }
 
         fetch(`http://localhost:3000/${path}`, {
             method: "POST",
