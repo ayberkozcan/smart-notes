@@ -300,3 +300,13 @@ button:hover {
     max-width: 40px;
     text-align: right;
 }
+
+#shareUsername {
+    width: 30%;
+    box-sizing: border-box;
+    border-radius: 8px;
+    border: 1px solid #ced4da;
+    padding: 3px;
+    background-color: #fdfdfd;
+    transition: box-shadow 0.3s ease-in-out;
+}
