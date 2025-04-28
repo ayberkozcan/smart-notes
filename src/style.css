@@ -310,3 +310,7 @@ button:hover {
     background-color: #fdfdfd;
     transition: box-shadow 0.3s ease-in-out;
 }
+
+.error-message {
+    color: red;
+}
