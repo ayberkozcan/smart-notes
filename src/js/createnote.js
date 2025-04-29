@@ -21,7 +21,8 @@ const checkboxShare = document.getElementById("checkboxShare");
 const inputShare = document.getElementById("inputShare");
 const shareUsername = document.getElementById("shareUsername");
 
-let noteSuccess = false;
+let noteSuccessTitle = false;
+let noteSuccessUsername = false;
 
 function renderCategories() {
     categoriesSelectBox.innerHTML = "";
@@ -76,23 +77,21 @@ function success(input) {
     input.className = "form-control is-valid"
 }
 
-function checkRequired(input) {  
+function checkRequired(input) {
     if (input.value === "") {
         error(input, `Title is required!`);
-        if (checkboxShare.checked && shareUsername.value === "") {
-            error(shareUsername, `Username is required!`);
-        } else {
-            success(shareUsername);
-        }
-        noteSuccess = false;
+        noteSuccessTitle = false;
     } else {
         success(title);
-        if (checkboxShare.checked && shareUsername.value === "") {
+        noteSuccessTitle = true;
+    }
+
+    if (checkboxShare.checked) {
+        if (shareUsername.value === "") {
             error(shareUsername, `Username is required!`);
-            noteSuccess = false;
+            noteSuccessUsername = false;
         } else {
             success(shareUsername);
-            noteSuccess = true;
         }
     }
 }
@@ -184,13 +183,12 @@ checkboxShare.addEventListener("change", function () {
 form.addEventListener("submit", async function(e) {
     e.preventDefault();
     
-    if (checkboxShare.checked) {
-        noteSuccess = await checkUsername(shareUsername.value);
+    checkRequired(title);
+    if (checkboxShare.checked && shareUsername.value !== "") {
+        noteSuccessUsername = await checkUsername(shareUsername.value);
     }
 
-    checkRequired(title, 'Title');
-
-    if (noteSuccess) {
+    if (noteSuccessTitle && noteSuccessUsername) {
         
         let path = !checkboxShare.checked ? "add-note" : "add-shared-note"; 
 
@@ -203,7 +201,7 @@ form.addEventListener("submit", async function(e) {
         };
 
         if (checkboxShare.checked) {
-            noteData.shared = shareUsername.value;
+            noteData.username = shareUsername.value;
         }
 
         fetch(`http://localhost:3000/${path}`, {

@@ -22,6 +22,8 @@ const sharedNotesBtn = document.getElementById("sharedNotesBtn");
 const tableHeader = document.getElementById("tableHeader");
 const createNoteBtn = document.getElementById("createNoteBtn");
 
+const categoryTh = document.getElementById("category");
+
 let currentPage = 1;
 
 let hiddenNotesShow = false;
@@ -100,7 +102,7 @@ function renderNotes() {
     } else {
         if (!sharedNotesShow) {
             path = "notes";
-        } else if (sharedNotesShow) {
+        } else {
             path = "notes-shared";
         }
     }
@@ -134,6 +136,7 @@ function drawNotes(notes) {
         notes.slice(index, 9 * currentPage).forEach(item => {
             const row = document.createElement("tr");
             if (!sharedNotesShow) {
+                categoryTh.innerHTML = `<i class="fa-solid fa-layer-group" style="color: #74C0FC;"></i> Category`;
                 row.innerHTML = `
                     <td>${item.title}</td>
                     <td>${item.category}</td>
@@ -151,11 +154,11 @@ function drawNotes(notes) {
                     </td>
                 `;
             } else {
+                categoryTh.innerHTML = `<i class="fa-solid fa-person" style="color: #74C0FC;"></i> Shared User`;
                 row.innerHTML = `
                     <td>${item.title}</td>
-                    <td>${item.category}</td>
+                    <td>${item.shared_user}</td>
                     <td>${item.created_date}</td>
-                    <td>${item.partner}</td>
                     <td class="d-flex justify-content-center gap-3">
                         <button type="button" class="btn btn-info btn-sm viewNoteBtn" data-id="${item.id}">
                             <i class="fa-solid fa-eye"></i>
@@ -287,7 +290,6 @@ function drawTodos(todos) {
                         <i class="fa-solid fa-xmark"></i>
                     </button>
                 </td>
-
             `;
 
             const checkbox = row.querySelector('input[type="checkbox"]');

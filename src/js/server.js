@@ -108,7 +108,7 @@ app.post("/login", (req, res) => {
 });
 
 app.get("/notes", (req, res) => {
-    db.all("SELECT * FROM notes WHERE user_id = ? AND private = 0 ORDER BY created_date DESC", [id], (err, rows) => {
+    db.all("SELECT * FROM notes WHERE user_id = ? AND private = 0 AND shared_user IS NULL ORDER BY created_date DESC", [id], (err, rows) => {
         if (err) {
             return res.status(500).json({ error: err.message });
         }
@@ -249,7 +249,7 @@ app.post("/add-note", (req, res) => {
 app.post("/add-shared-note", (req, res) => {
     const { title, content, category, color, isPrivate, username } = req.body;
     const date = new Date().toLocaleString();
-    console.log(username);
+
     db.run(
         "INSERT INTO notes (user_id, title, content, category, color, private, created_date, shared_user) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
         [id, title, content, category, color, 0, date, username],
