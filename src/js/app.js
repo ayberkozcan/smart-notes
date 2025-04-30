@@ -154,10 +154,10 @@ function drawNotes(notes) {
                     </td>
                 `;
             } else {
-                categoryTh.innerHTML = `<i class="fa-solid fa-person" style="color: #74C0FC;"></i> Shared User`;
+                categoryTh.innerHTML = `<i class="fa-solid fa-person" style="color: #74C0FC;"></i> Users`;
                 row.innerHTML = `
                     <td>${item.title}</td>
-                    <td>${item.shared_user}</td>
+                    <td>${item.shared_user.split(",")[0]} | ${item.shared_user.split(",")[1]}</td>
                     <td>${item.created_date}</td>
                     <td class="d-flex justify-content-center gap-3">
                         <button type="button" class="btn btn-info btn-sm viewNoteBtn" data-id="${item.id}">
@@ -446,7 +446,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById("noteContent").innerHTML = `
             <div class="preview-homepage" style="background-color:${noteColor}">
                 <div class="form-group">
-                    <p id="preview-title">${note.title}</p>
+                    <p id="preview-title"><i class="fa-solid fa-heading" style="color:rgb(255, 255, 255); margin-top: 3px; margin-right: 5px;"></i> ${note.title}</p>
                 </div>
                 <hr>
                 <div class="form-group">
@@ -454,7 +454,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>           
                 
                 <div class="form-group d-flex justify-content-between">
-                    <p id="preview-category">${note.category}</p>
+                    <p id="preview-category"><i class="fa-solid fa-layer-group" style="color:rgb(255, 255, 255); margin-top: 3px; margin-right: 7px;"></i>${note.category}</p>
                 </div>
             </div>
         `;
