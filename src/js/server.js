@@ -117,11 +117,28 @@ app.get("/notes", (req, res) => {
 });
 
 app.get("/notes-shared", (req, res) => {
-    db.all("SELECT * FROM notes WHERE user_id = ? AND private = 0 AND shared_user IS NOT NULL AND shared_user != '' ORDER BY created_date DESC", [id], (err, rows) => {
+    db.get("SELECT username FROM users WHERE id = ?", [id], function (err, row) {
         if (err) {
-            return res.status(500).json({ error: err.message });
+            return res.status(500).json({ error: "Database error: " + err.message });
         }
-        res.json(rows);
+
+        const username = row.username;
+
+        db.all(
+            `SELECT * FROM notes 
+             WHERE private = 0 
+             AND shared_user IS NOT NULL 
+             AND shared_user != '' 
+             AND shared_user LIKE ? 
+             ORDER BY created_date DESC`,
+            [`%${username}%`],
+            (err, rows) => {
+                if (err) {
+                    return res.status(500).json({ error: err.message });
+                }
+                res.json(rows);
+            }
+        );
     });
 });
 
@@ -250,16 +267,24 @@ app.post("/add-shared-note", (req, res) => {
     const { title, content, category, color, isPrivate, username } = req.body;
     const date = new Date().toLocaleString();
 
-    db.run(
-        "INSERT INTO notes (user_id, title, content, category, color, private, created_date, shared_user) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-        [id, title, content, category, color, 0, date, username],
-        function (err) {
-            if (err) {
-                return res.status(500).json({ error: err.message });
-            }
-            res.json({ message: "Note added successfully", id: this.lastID });
+    db.get("SELECT username FROM users WHERE id = ?", [id], function (err, row) {
+        if (err) {
+            return res.status(500).json({ error: "Database error: " + err.message });
         }
-    );
+
+        const creatorUsername = row.username;
+
+        db.run(
+            "INSERT INTO notes (user_id, title, content, category, color, private, created_date, shared_user) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            [id, title, content, category, color, 0, date, creatorUsername + "," + username],
+            function (err) {
+                if (err) {
+                    return res.status(500).json({ error: err.message });
+                }
+                res.json({ message: "Note added successfully", id: this.lastID });
+            }
+        );
+    });
 });
 
 app.get("/check-username/:username", (req, res) => {
