@@ -187,6 +187,30 @@ app.post("/edit-note-submit", (req, res) => {
     );
 });
 
+app.post("/edit-shared-note-submit", (req, res) => {
+    const { noteId, title, content, category, color, isPrivate, username } = req.body;
+    const date = new Date().toLocaleString();
+    
+    db.get("SELECT username FROM users WHERE id = ?", [id], function (err, row) {
+        if (err) {
+            return res.status(500).json({ error: "Database error: " + err.message });
+        }
+
+        const creatorUsername = row.username;
+
+        db.run(
+            "UPDATE notes SET title = ?, content = ?, category = ?, color = ?, private = ?, created_date = ?, shared_user = ? WHERE id = ?",
+            [title, content, category, color, 0, date, creatorUsername + "," + username, noteId],
+            function (err) {
+                if (err) {
+                    return res.status(500).json({ error: err.message });
+                }
+                res.json({ message: "Note updated successfully", id: this.lastID });
+            }
+        );
+    });
+});
+
 app.delete("/delete-note/:id", (req, res) => {
     const { id } = req.params;
     db.run("DELETE FROM notes WHERE id = ?", [id], function (err) {

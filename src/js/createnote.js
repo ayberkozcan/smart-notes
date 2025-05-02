@@ -186,6 +186,10 @@ form.addEventListener("submit", async function(e) {
     checkRequired(title);
     if (checkboxShare.checked && shareUsername.value !== "") {
         noteSuccessUsername = await checkUsername(shareUsername.value);
+    } else if (checkboxShare.checked && shareUsername.value == "") {
+        noteSuccessUsername = false;
+    } else {
+        noteSuccessUsername = true;
     }
 
     if (noteSuccessTitle && noteSuccessUsername) {

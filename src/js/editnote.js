@@ -20,7 +20,12 @@ const categoriesSelectBox = document.getElementById("category");
 const noteCount = document.getElementById("note-count");
 const favCategory = document.getElementById("fav-category");
 
-let noteSuccess = false;
+const checkboxShare = document.getElementById("checkboxShare");
+const inputShare = document.getElementById("inputShare");
+const shareUsername = document.getElementById("shareUsername");
+
+let noteSuccessTitle = false;
+let noteSuccessUsername = false;
 
 function renderCategories() {
     categoriesSelectBox.innerHTML = "";
@@ -68,7 +73,6 @@ function getNote() {
         .then(data => {
             if (data.length > 0) {
                 const note = data[0];
-                console.log(note);
 
                 title.value = note.title;
                 previewTitle.innerHTML = title.value.trim() === "" ? "..." : title.value;
@@ -78,7 +82,6 @@ function getNote() {
 
                 checkbox.checked = note.private ? true : false;
                 previewHidden.innerHTML = checkbox.checked ? `<i class="fa-solid fa-lock" style="padding: 5px;"></i>` : ``;
-                console.log(note.category);
                 category.value = note.category;
                 color.value = note.color;
                 previewCategory.innerHTML = note.category
@@ -104,13 +107,39 @@ function success(input) {
     input.className = "form-control is-valid"
 }
 
-function checkRequired(title) {  
-    if (title.value === "") {
-        error(title, `Title is required!`);
-        noteSuccess = false;
+function checkRequired(input) {
+    if (input.value === "") {
+        error(input, `Title is required!`);
+        noteSuccessTitle = false;
     } else {
         success(title);
-        noteSuccess = true;
+        noteSuccessTitle = true;
+    }
+
+    if (checkboxShare.checked) {
+        if (shareUsername.value === "") {
+            error(shareUsername, `Username is required!`);
+            noteSuccessUsername = false;
+        } else {
+            success(shareUsername);
+        }
+    }
+}
+
+async function checkUsername(username) {
+    try {
+        const response = await fetch(`http://localhost:3000/check-username/${encodeURIComponent(username)}`);
+        const data = await response.json();
+
+        if (!data.found) {
+            alert("User cannot be found!");
+            return false;
+        }
+        
+        return true;
+    } catch (err) {
+        console.error("Error fetching user:", err);
+        return false;
     }
 }
 
@@ -167,28 +196,60 @@ function changeColor(selectedColor) {
 }
 
 checkbox.addEventListener("change", function () {
-    previewHidden.innerHTML = checkbox.checked ? `<i class="fa-solid fa-lock" style="padding: 5px;"></i>` : ``;
+    if (this.checked) {
+        checkboxShare.checked = false;
+        inputShare.style.display = "none";
+        document.getElementById("shareUsername").value = "";
+    }
+
+    previewHidden.innerHTML = this.checked
+        ? `<i class="fa-solid fa-lock" style="padding: 5px;"></i>`
+        : ``;
 });
 
-form.addEventListener("submit", function(e) {
+checkboxShare.addEventListener("change", function () {
+    if (this.checked) {
+        checkbox.checked = false;
+        previewHidden.innerHTML = "";
+        inputShare.style.display = "flex";
+    } else {
+        inputShare.style.display = "none";
+        document.getElementById("shareUsername").value = "";
+    }
+});
+
+form.addEventListener("submit", async function(e) {
     e.preventDefault();
 
     checkRequired(title);
+    if (checkboxShare.checked && shareUsername.value !== "") {
+        noteSuccessUsername = await checkUsername(shareUsername.value);
+    } else if (checkboxShare.checked && shareUsername.value == "") {
+        noteSuccessUsername = false;
+    } else {
+        noteSuccessUsername = true;
+    }
 
-    if (noteSuccess) {
+    if (noteSuccessTitle && noteSuccessUsername) {
+
+        let path = !checkboxShare.checked ? "edit-note-submit" : "edit-shared-note-submit"; 
+
         const noteData = {
-            id: noteId,
+            noteId: noteId,
             title: title.value,
             content: content.value,
             category: category.value,
-            color: color.value,
+            color: color.options[color.selectedIndex].text,
             isPrivate: checkbox.checked
         };
 
-        console.log(category.value);
-        console.log(color.value);
+        if (checkboxShare.checked) {
+            noteData.username = shareUsername.value;
+        }
 
-        fetch("http://localhost:3000/edit-note-submit", {
+        console.log(noteData);
+
+        fetch(`http://localhost:3000/${path}`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
