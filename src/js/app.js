@@ -157,7 +157,7 @@ function drawNotes(notes) {
                 categoryTh.innerHTML = `<i class="fa-solid fa-person" style="color: #74C0FC;"></i> Users`;
                 row.innerHTML = `
                     <td>${item.title}</td>
-                    <td>${item.shared_user.split(",")[0]} | ${item.shared_user.split(",")[1]}</td>
+                    <td>${item.shared_user.split(",")[0]} & ${item.shared_user.split(",")[1]}</td>
                     <td>${item.created_date}</td>
                     <td class="d-flex justify-content-center gap-3">
                         <button type="button" class="btn btn-info btn-sm viewNoteBtn" data-id="${item.id}">
@@ -229,24 +229,6 @@ document.querySelector("th:nth-child(3)").addEventListener("click", () => sortNo
 
 renderNotes();
 renderToDos();
-// function renderInfo() {
-    
-//     fetch("http://localhost:3000/get-note-count")
-//         .then(response => response.json())
-//         .then(count => {
-//             noteCount.innerHTML = count["COUNT(id)"];
-//         })
-//         .catch(err => console.error("Error fetching note count:", err));
-
-//     fetch("http://localhost:3000/get-fav-category")
-//         .then(response => response.json())
-//         .then(category => {
-//             favCategory.innerHTML = category["MAX(category)"];
-//         })   
-//         .catch(err => console.error("Error fetching favourite category:", err));
-// }
-
-// renderInfo();
 
 function renderToDos() {
     todoContent.innerHTML = "";
