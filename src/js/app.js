@@ -357,7 +357,6 @@ document.getElementById("addTodo").addEventListener("click", function (e) {
                     return response.json();
                 })
                 .then(data => {
-                    // alert("Task added successfully!");
                     renderToDos();
                 })
                 .catch(err => {
@@ -402,11 +401,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     const modal = document.getElementById("noteModal");
-    // const closeBtn = document.getElementById("closeNoteModal");
-
-    // closeBtn.onclick = function () {
-    //     modal.style.display = "none";
-    // };
 
     function showNoteModal(id) {
         const note = getNodeById(id);

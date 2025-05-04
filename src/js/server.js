@@ -61,7 +61,7 @@ app.post("/signup", (req, res) => {
     const date = new Date().toLocaleString();
 
     db.get(
-        "SELECT * FROM users WHERE email = ? AND username = ?",
+        "SELECT * FROM users WHERE email = ? OR username = ?",
         [email, username],
         (err, row) => {
             if (err) {

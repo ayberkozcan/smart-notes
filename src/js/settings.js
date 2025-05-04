@@ -34,10 +34,6 @@ document.getElementById("gobackBtn").addEventListener("click", function (e) {
     window.location.href = "homepage.html";
 });
 
-// document.getElementById("friendsBtn").addEventListener("click", function (e) {
-//     window.location.href = "friends.html";
-// });
-
 document.getElementById("manageCategoriesBtn").addEventListener("click", function (e) {
     window.location.href = "managecategories.html";
 });

@@ -2,19 +2,6 @@ const form = document.getElementById("form");
 const password = document.getElementById("password");
 const verificationStatus = document.getElementById("verificationStatus");
 
-// function verifyInput(input) {
-//     if (input.value == "asd1234") {
-//         console.log("Verification Successful");
-
-//         localStorage.setItem("isVerified", "true");
-
-//         window.location.href = "homepage.html";
-//     } else {
-//         console.log("Verification Unsuccessful");
-//         error("Wrong Password!");
-//     }
-// }
-
 function verifyInput(input) {
     const passwordValue = password.value.trim();
 
