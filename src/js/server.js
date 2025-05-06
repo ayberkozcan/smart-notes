@@ -2,6 +2,7 @@ import express from 'express';
 import sqlite3 from 'sqlite3';
 import cors from 'cors';
 import session from 'express-session';
+import bcrypt from 'bcrypt';
 
 const app = express();
 const port = 3000;
@@ -71,16 +72,22 @@ app.post("/signup", (req, res) => {
                 return res.status(400).json({ error: "Email or username already exists!" });
             }
 
-            db.run(
-                "INSERT INTO users (email, username, password, created_date) VALUES (?, ?, ?, ?)",
-                [email, username, password, date],
-                function (err) {
-                    if (err) {
-                        return res.status(500).json({ error: err.message });
-                    }
-                    res.json({ message: "Signed up successfully", id: this.lastID });
+            bcrypt.hash(password, 10, (err, hashedPassword) => {
+                if (err) {
+                    return res.status(500).json({ error: "Error hashing password" });
                 }
-            );
+
+                db.run(
+                    "INSERT INTO users (email, username, password, created_date) VALUES (?, ?, ?, ?)",
+                    [email, username, password, date],
+                    function (err) {
+                        if (err) {
+                            return res.status(500).json({ error: err.message });
+                        }
+                        res.json({ message: "Signed up successfully", id: this.lastID });
+                    }
+                );
+            });
         }
     );
 });
