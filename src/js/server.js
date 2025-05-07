@@ -95,21 +95,29 @@ app.post("/signup", (req, res) => {
 app.post("/login", (req, res) => {
     const { email, username, password } = req.body;
     db.get(
-        "SELECT * FROM users WHERE email = ? AND username = ? AND password = ?",
-        [email, username, password],
+        "SELECT * FROM users WHERE email = ? AND username = ?",
+        [email, username],
         (err, user) => {
             if (err) {
                 return res.status(500).json({ error: "Database error: " + err.message });
             }
-            if (user) {
-                id = user.id;
-                res.json({
-                    success: true,
-                    user: { id: user.id, email: user.email, username: user.username }
-                });
-            } else {
-                res.status(401).json({ success: false, message: "Invalid credentials" });
+            if (!user) {
+                return res.status(401).json({ success: false, message: "Invalid credentials" });
             }
+
+            bcrypt.compare(password, user.password, (err, result) => {
+                if (err) {
+                    return res.status(500).json({ error: "Error comparing passwords" });
+                }
+                if (result) {
+                    res.json({
+                        success: true,
+                        user: { id: user.id, email: user.email, username: user.username }
+                    });
+                } else {
+                    res.status(401).json({ success: false, message: "Invalid credentials" });
+                }
+            });
         }
     );
 });
