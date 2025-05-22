@@ -199,7 +199,7 @@ function drawNotes(notes) {
         const cell = document.createElement("td");
         cell.colSpan = 4;
         cell.style.textAlign = "center";
-        cell.textContent = `${notesData.length} notes listed`;
+        cell.textContent = `${notesData.length} notes total`;
         row.appendChild(cell);
         tfoot.appendChild(row);
         table.appendChild(tfoot);

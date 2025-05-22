@@ -79,7 +79,7 @@ app.post("/signup", (req, res) => {
 
                 db.run(
                     "INSERT INTO users (email, username, password, created_date) VALUES (?, ?, ?, ?)",
-                    [email, username, password, date],
+                    [email, username, hashedPassword, date],
                     function (err) {
                         if (err) {
                             return res.status(500).json({ error: err.message });
@@ -187,12 +187,12 @@ app.get("/edit-note/:id", (req, res) => {
 });
 
 app.post("/edit-note-submit", (req, res) => {
-    const { id, title, content, category, color, isPrivate } = req.body;
+    const { noteId, title, content, category, color, isPrivate } = req.body;
     const date = new Date().toLocaleString();
 
     db.run(
         "UPDATE notes SET title = ?, content = ?, category = ?, color = ?, private = ?, created_date = ? WHERE id = ?",
-        [title, content, category, color, isPrivate, date, id],
+        [title, content, category, color, isPrivate, date, noteId],
         function (err) {
             if (err) {
                 return res.status(500).json({ error: err.message });
