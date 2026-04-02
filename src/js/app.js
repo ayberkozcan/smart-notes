@@ -36,13 +36,28 @@ let displayedNotes = [];
 let todosData = [];
 let displayedTodos = [];
 
+function updateHiddenNotesButton() {
+    if (hiddenNotesShow) {
+        hiddenNotesBtn.innerHTML = `<i class="fa-solid fa-lock-open"></i>`;
+        hiddenNotesBtn.className = "btn btn-outline-success home-quick-action-btn";
+        hiddenNotesBtn.setAttribute("title", "View All Notes");
+        hiddenNotesBtn.setAttribute("aria-label", "View all notes");
+    } else {
+        hiddenNotesBtn.innerHTML = `<i class="fa-solid fa-lock"></i>`;
+        hiddenNotesBtn.className = "btn btn-outline-danger home-quick-action-btn";
+        hiddenNotesBtn.setAttribute("title", "Hidden Notes");
+        hiddenNotesBtn.setAttribute("aria-label", "Hidden notes");
+    }
+}
+
 if (localStorage.getItem("theme") === "dark") {
     table.classList.add("table-dark");
-    hiddenNotesBtn.classList = "btn btn-danger";
     settingsBtn.classList = "btn btn-info";
 } else {
     table.classList.remove("table-dark");
 }
+
+updateHiddenNotesButton();
 
 document.addEventListener('DOMContentLoaded', () => {
     const savedUserData = JSON.parse(localStorage.getItem("userData"));
@@ -153,43 +168,62 @@ function drawNotes(notes) {
     } else {
         let index = 0;
         if (currentPage != 1)
-            index = 9 * (currentPage - 1);
-        notes.slice(index, 9 * currentPage).forEach(item => {
+            index = 6 * (currentPage - 1);
+        notes.slice(index, 6 * currentPage).forEach(item => {
             const row = document.createElement("tr");
+            const noteColor = getNoteColor(item.color);
             if (!sharedNotesShow) {
                 categoryTh.innerHTML = `<i class="fa-solid fa-layer-group" style="color: #74C0FC;"></i> Category`;
                 row.innerHTML = `
-                    <td>${item.title}</td>
-                    <td>${item.category}</td>
-                    <td>${item.created_date}</td>
-                    <td class="d-flex justify-content-center gap-3">
-                        <button type="button" class="btn btn-info btn-sm viewNoteBtn" data-id="${item.id}">
+                    <td class="home-note-title-cell">
+                        <span class="home-note-title-wrap">
+                            <span class="home-note-color" style="background:${noteColor};"></span>
+                            <span class="home-note-title">${item.title}</span>
+                        </span>
+                    </td>
+                    <td>
+                        <span class="home-note-tag">${item.category}</span>
+                    </td>
+                    <td class="home-note-date">${item.created_date}</td>
+                    <td>
+                        <div class="home-table-actions">
+                        <button type="button" class="btn btn-info btn-sm home-table-action viewNoteBtn" data-id="${item.id}">
                             <i class="fa-solid fa-eye"></i>
                         </button>
-                        <button type="button" class="btn btn-success btn-sm editNoteBtn" data-id="${item.id}">
+                        <button type="button" class="btn btn-success btn-sm home-table-action editNoteBtn" data-id="${item.id}">
                             <i class="fa-solid fa-pen"></i>
                         </button>
-                        <button type="button" class="btn btn-danger btn-sm deleteNoteBtn" data-id="${item.id}">
+                        <button type="button" class="btn btn-danger btn-sm home-table-action deleteNoteBtn" data-id="${item.id}">
                             <i class="fa-solid fa-trash"></i>
                         </button>
+                        </div>
                     </td>
                 `;
             } else {
                 categoryTh.innerHTML = `<i class="fa-solid fa-person" style="color: #74C0FC;"></i> Users`;
                 row.innerHTML = `
-                    <td>${item.title}</td>
-                    <td>${item.shared_user.split(",")[0]} & ${item.shared_user.split(",")[1]}</td>
-                    <td>${item.created_date}</td>
-                    <td class="d-flex justify-content-center gap-3">
-                        <button type="button" class="btn btn-info btn-sm viewNoteBtn" data-id="${item.id}">
+                    <td class="home-note-title-cell">
+                        <span class="home-note-title-wrap">
+                            <span class="home-note-color" style="background:${noteColor};"></span>
+                            <span class="home-note-title">${item.title}</span>
+                        </span>
+                    </td>
+                    <td>
+                        <span class="home-note-tag home-note-tag--shared">${item.shared_user.split(",")[0]} & ${item.shared_user.split(",")[1]}</span>
+                    </td>
+                    <td class="home-note-date">${item.created_date}</td>
+                    <td>
+                        <div class="home-table-actions">
+                        <button type="button" class="btn btn-info btn-sm home-table-action viewNoteBtn" data-id="${item.id}">
                             <i class="fa-solid fa-eye"></i>
                         </button>
-                        <button type="button" class="btn btn-success btn-sm editNoteBtn" data-id="${item.id}">
+                        <button type="button" class="btn btn-success btn-sm home-table-action editNoteBtn" data-id="${item.id}">
                             <i class="fa-solid fa-pen"></i>
                         </button>
-                        <button type="button" class="btn btn-danger btn-sm deleteNoteBtn" data-id="${item.id}">
+                        <button type="button" class="btn btn-danger btn-sm home-table-action deleteNoteBtn" data-id="${item.id}">
                             <i class="fa-solid fa-trash"></i>
                         </button>
+                        </div>
                     </td>
                 `;
             }
@@ -212,6 +246,14 @@ function drawNotes(notes) {
                 window.location.href = `editnotepage.html?id=${item.id}`;
             });
 
+            row.addEventListener("click", function (event) {
+                if (event.target.closest(".home-table-action")) {
+                    return;
+                }
+
+                showNoteModal(item.id);
+            });
+
             tbody.appendChild(row);
         });
         const tfoot = document.createElement("tfoot");
@@ -224,6 +266,95 @@ function drawNotes(notes) {
         tfoot.appendChild(row);
         table.appendChild(tfoot);
     }
+}
+
+function getNoteColor(colorName) {
+    const colors = {
+        Gray: "rgba(192, 192, 192, 0.822)",
+        Yellow: "#faffcc",
+        Blue: "#a1afff",
+        Red: "#ffb3b3",
+        Pink: "#ffb0ff"
+    };
+
+    return colors[colorName] || "#ffffff";
+}
+
+function getNodeById(id) {
+    return notesData.find(n => n.id == id);
+}
+
+function closeNoteModal() {
+    const modal = document.getElementById("noteModal");
+    const modalContent = document.getElementById("noteModalContent");
+
+    modalContent.classList.remove("fade-in");
+    modalContent.classList.add("fade-out");
+
+    setTimeout(() => {
+        modal.style.display = "none";
+        modalContent.classList.remove("fade-out");
+    }, 300);
+}
+
+function showNoteModal(id) {
+    const modal = document.getElementById("noteModal");
+    const modalContent = document.getElementById("noteModalContent");
+    const note = getNodeById(id);
+
+    if (!note) {
+        return;
+    }
+
+    const noteColor = getNoteColor(note.color);
+    const sharedUsers = note.shared_user
+        ? note.shared_user.split(",").filter(Boolean).join(" / ")
+        : "";
+    
+    document.getElementById("noteContent").innerHTML = `
+        <article class="note-preview-card home-note-preview-card" style="--preview-accent:${noteColor}; background-color:${noteColor};">
+            <div class="note-preview-card__stripe"></div>
+            <div class="note-preview-card__body">
+                <div class="note-preview-card__header">
+                    <div>
+                        <p class="note-preview-card__eyebrow">Note Preview</p>
+                        <h2 class="note-preview-card__title">${note.title}</h2>
+                    </div>
+                    <span class="note-preview-card__badge">${note.private ? "Private" : "Visible"}</span>
+                </div>
+
+                <div class="note-preview-card__meta">
+                    <span class="note-preview-card__meta-item">
+                        <i class="fa-solid fa-layer-group"></i>
+                        ${note.category || "None"}
+                    </span>
+                    <span class="note-preview-card__meta-item">
+                        <i class="fa-solid fa-calendar-days"></i>
+                        ${note.created_date}
+                    </span>
+                    ${sharedUsers ? `
+                    <span class="note-preview-card__meta-item">
+                        <i class="fa-solid fa-user-group"></i>
+                        ${sharedUsers}
+                    </span>` : ""}
+                </div>
+
+                <div class="note-preview-card__content">
+                    ${note.content && note.content.trim() !== "" ? note.content.replace(/\n/g, "<br>") : "<span class=\"note-preview-card__empty\">No content added.</span>"}
+                </div>
+            </div>
+        </article>
+    `;
+
+    modal.style.display = "block";
+    modalContent.classList.remove("fade-out");
+    modalContent.classList.add("fade-in");
+
+    window.onclick = function (event) {
+        if (event.target === modal) {
+            closeNoteModal();
+        }
+    };
 }
 
 function sortNotes(field) {
@@ -351,14 +482,7 @@ function drawTodos(todos) {
 hiddenNotesBtn.addEventListener("click", function(e) {
     if (localStorage.getItem('isVerified') === 'true') {
         hiddenNotesShow = !hiddenNotesShow;
-
-        if (hiddenNotesShow) {
-            hiddenNotesBtn.innerText = "View All Notes";
-            hiddenNotesBtn.className = "btn btn-outline-success";
-        } else {
-            hiddenNotesBtn.innerText = "View Hidden Notes";
-            hiddenNotesBtn.className = "btn btn-outline-danger";
-        }
+        updateHiddenNotesButton();
     
         renderNotes();
     } else {
@@ -371,7 +495,7 @@ document.getElementById("createNoteBtn").addEventListener("click", function(e) {
 });
 
 document.getElementById("addTodo").addEventListener("click", function (e) {
-    if (todosData.length == 6) {
+    if (todosData.length == 9) {
         alert("You've reached task limit!");
     } else {
         let title = prompt("Enter task: ");
@@ -431,68 +555,13 @@ logoutBtn.addEventListener("click", function(e) {
 });
 
 document.addEventListener('DOMContentLoaded', () => {
-    document.body.addEventListener('click', function (e) {
-        const viewBtn = e.target.closest('.viewNoteBtn');
+    const closeModalBtn = document.getElementById("closeNoteModal");
+
+    closeModalBtn.addEventListener("click", closeNoteModal);
+    document.body.addEventListener("click", function (e) {
+        const viewBtn = e.target.closest(".viewNoteBtn");
         if (viewBtn) {
-            const noteId = viewBtn.getAttribute('data-id');
-            showNoteModal(noteId);
+            showNoteModal(viewBtn.getAttribute("data-id"));
         }
     });
-
-    const modal = document.getElementById("noteModal");
-
-    function showNoteModal(id) {
-        const note = getNodeById(id);
-        const color = (note) => {
-            const colors = {
-                Gray: "rgba(192, 192, 192, 0.822)",
-                Yellow: "#faffcc",
-                Blue: "#a1afff",
-                Red: "#ffb3b3",
-                Pink: "#ffb0ff"
-            };
-            return colors[note.color] || "#ffffff";
-        };
-
-        const noteColor = color(note);
-        const modal = document.getElementById("noteModal");
-        const modalContent = document.getElementById("noteModalContent");
-        
-        document.getElementById("noteContent").innerHTML = `
-            <div class="preview-homepage" style="background-color:${noteColor}">
-                <div class="form-group">
-                    <p id="preview-title"><i class="fa-solid fa-heading" style="color:rgb(255, 255, 255); margin-top: 3px; margin-right: 5px;"></i> ${note.title}</p>
-                </div>
-                <hr>
-                <div class="form-group">
-                    <div id="preview-content" class="preview-box">${note.content}</div>
-                </div>           
-                
-                <div class="form-group d-flex justify-content-between">
-                    <p id="preview-category"><i class="fa-solid fa-layer-group" style="color:rgb(255, 255, 255); margin-top: 3px; margin-right: 7px;"></i>${note.category}</p>
-                </div>
-            </div>
-        `;
-
-        modal.style.display = "block";
-        modalContent.classList.remove("fade-out");
-        modalContent.classList.add("fade-in");
-
-        
-        window.onclick = function (event) {
-            if (event.target === modal) {
-                modalContent.classList.remove("fade-in");
-                modalContent.classList.add("fade-out");
-                
-                setTimeout(() => {
-                    modal.style.display = "none";
-                    modalContent.classList.remove("fade-out");
-                }, 300);
-            }
-        };
-    }
-
-    function getNodeById(id) {
-        return notesData.find(n => n.id == id);
-    }
 });

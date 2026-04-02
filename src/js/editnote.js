@@ -6,7 +6,7 @@ const checkbox = document.getElementById("checkbox");
 const contentLength = document.getElementById("content-length");
 const contentWords = document.getElementById("content-words");
 
-const previewBox = document.querySelector(".preview");
+const previewBox = document.getElementById("previewSurface");
 const previewTitle = document.getElementById("preview-title");
 const previewContent = document.getElementById("preview-content");
 const previewCategory = document.getElementById("preview-category");
@@ -96,7 +96,7 @@ function getNote() {
                 loadContent();
 
                 checkbox.checked = note.private ? true : false;
-                previewHidden.innerHTML = checkbox.checked ? `<i class="fa-solid fa-lock" style="padding: 5px;"></i>` : ``;
+                updatePreviewVisibilityBadge();
                 categoriesSelectBox.value = note.category;
                 color.value = note.color;
                 previewCategory.innerHTML = note.category;
@@ -113,14 +113,16 @@ function getNote() {
 getNote();
 
 function error(input, message) {
-    input.className = "form-control is-invalid";
+    input.classList.add("is-invalid");
+    input.classList.remove("is-valid");
     const div = input.nextElementSibling;
     div.innerText = message;
     div.className = "invalid-feedback";
 }
 
 function success(input) {
-    input.className = "form-control is-valid"
+    input.classList.add("is-valid");
+    input.classList.remove("is-invalid");
 }
 
 function checkRequired(input) {
@@ -180,7 +182,17 @@ function loadContent() {
     contentLength.innerHTML = `${charCount} characters`;
     contentWords.innerHTML = `${wordCount} words`;
 
-    previewContent.innerHTML = content.value.trim() === "" ? "..." : content.value;
+    previewContent.innerHTML = content.value.trim() === ""
+        ? `<span class="note-preview-card__empty">Start writing to preview the body of your note.</span>`
+        : content.value.replace(/\n/g, "<br>");
+}
+
+function updatePreviewVisibilityBadge() {
+    if (checkbox.checked) {
+        previewHidden.innerHTML = `<i class="fa-solid fa-lock"></i> Private`;
+    } else {
+        previewHidden.innerHTML = `Visible`;
+    }
 }
 
 categoriesSelectBox.addEventListener("change", function () {
@@ -194,49 +206,59 @@ color.addEventListener("change", function () {
 });
 
 function changeColor(selectedColor) {
+    let colorValue = "#ffffff";
+
     switch (selectedColor) {
         case "Gray":
-            previewBox.style.backgroundColor = "rgba(192, 192, 192, 0.822)";
+            colorValue = "rgba(192, 192, 192, 0.822)";
             break;
         case "Yellow":
-            previewBox.style.backgroundColor = "#faffcc";
+            colorValue = "#faffcc";
             break;
         case "Blue":
-            previewBox.style.backgroundColor = "#a1afff";
+            colorValue = "#a1afff";
             break;
         case "Red":
-            previewBox.style.backgroundColor = "#ffb3b3";
+            colorValue = "#ffb3b3";
             break;
         case "Pink":
-            previewBox.style.backgroundColor = "#ffb0ff";
+            colorValue = "#ffb0ff";
             break;
         default:
-            previewBox.style.backgroundColor = "#ffffff";
+            colorValue = "#ffffff";
             break;
     }
+
+    previewBox.style.setProperty("--preview-accent", colorValue);
+    previewBox.style.backgroundColor = colorValue;
 }
 
 checkbox.addEventListener("change", function () {
     if (this.checked) {
         checkboxShare.checked = false;
         inputShare.style.display = "none";
-        document.getElementById("shareUsername").value = "";
+        shareUsername.value = "";
+        shareUsername.classList.remove("is-valid", "is-invalid");
+        shareUsername.nextElementSibling.innerText = "";
+        shareUsername.nextElementSibling.className = "";
     }
 
-    previewHidden.innerHTML = this.checked
-        ? `<i class="fa-solid fa-lock" style="padding: 5px;"></i>`
-        : ``;
+    updatePreviewVisibilityBadge();
 });
 
 checkboxShare.addEventListener("change", function () {
     if (this.checked) {
         checkbox.checked = false;
-        previewHidden.innerHTML = "";
         inputShare.style.display = "flex";
     } else {
         inputShare.style.display = "none";
-        document.getElementById("shareUsername").value = "";
+        shareUsername.value = "";
+        shareUsername.classList.remove("is-valid", "is-invalid");
+        shareUsername.nextElementSibling.innerText = "";
+        shareUsername.nextElementSibling.className = "";
     }
+
+    updatePreviewVisibilityBadge();
 });
 
 form.addEventListener("submit", async function(e) {

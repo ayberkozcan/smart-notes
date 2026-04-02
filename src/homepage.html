@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
@@ -10,98 +13,120 @@
 
     <title>Smart Notes</title>
 </head>
-<body>
+<body class="home-page">
 
-    <div class="container mt-3">
-        <h1>Smart Notes</h1>
-        <hr>
-        <div class="row mt-5">
-            <div class="col-8">
-                <div class="row mt-5 ml-4">
-                    <div class="col-12 searchHeader" style="display: flex; align-items: center;">
-                        <h3 id="tableHeader" style="flex: 1;">My Notes</h3>
-                        <button class="btn my-2 my-sm-0" id="sharedNotesBtn"><i class="fa-solid fa-user-group" style="color: #1ba300;"></i></button>
-                        <input class="form-control mr-sm-2" id="searchInput" type="search" placeholder="Search by Title" aria-label="Search" style="width: 150px; margin-left: 10px;">
-                        <button class="btn btn-outline-success my-2 my-sm-0" type="submit"><i class="fa-solid fa-magnifying-glass"></i></button>
-                    </div>                    
-                    <table class="table table-bordered table-striped table-dark" id="notesTable" style="table-layout: fixed; width: 100%;">
-                        <thead>
-                            <tr>
-                                <th style="width: 28%;"><i class="fa-solid fa-heading" style="color: #74C0FC;"></i> Title</th>
-                                <th style="width: 22%;" id="category"><i class="fa-solid fa-layer-group" style="color: #74C0FC;"></i> Category</th>
-                                <th style="width: 20%;"><i class="fa-solid fa-calendar-days" style="color: #74C0FC;"></i> Last Updated</th>
-                                <th class="text-center" style="width: 20%;">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="note-list">
-                        </tbody>
-                        <tbody id="hidden-note-list">
-                        </tbody>
-                    </table>
-                </div>
-                <div class="row mt-4 ml-3">
-                    <div class="row mt-5 d-flex justify-content-between">
-                        <div class="col md-5">
-                            <button type="button" class="btn btn-success" id="createNoteBtn">Create Note</button>
+    <div class="container home-shell">
+        <section class="home-hero">
+            <div>
+                <p class="home-hero__eyebrow">Workspace</p>
+                <h1 class="home-hero__title">Smart Notes</h1>
+                <p class="home-hero__text">
+                    Keep your notes, tasks, and shared work in one focused dashboard.
+                </p>
+            </div>
+        </section>
+
+        <div class="row home-layout">
+            <div class="col-lg-8 home-main">
+                <section class="home-panel home-notes-panel">
+                    <div class="searchHeader home-toolbar">
+                        <div class="home-toolbar__title">
+                            <h3 id="tableHeader">My Notes</h3>
+                            <p>Search, sort, and manage your notes.</p>
                         </div>
-                        <div class="col md-5 d-flex justify-content-end align-items-center">
-                            <button type="button" class="btn btn-outline-secondary me-2" id="previousPageBtn">
+                        <div class="home-toolbar__actions">
+                            <button class="btn home-icon-btn" id="sharedNotesBtn" aria-label="Toggle shared notes">
+                                <i class="fa-solid fa-user-group"></i>
+                            </button>
+                            <div class="home-search">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                                <input class="form-control" id="searchInput" type="search" placeholder="Search by title" aria-label="Search">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="home-table-wrap">
+                        <table class="table table-bordered table-striped table-dark" id="notesTable">
+                            <thead>
+                                <tr>
+                                    <th style="width: 28%;"><i class="fa-solid fa-heading" style="color: #74C0FC;"></i> Title</th>
+                                    <th style="width: 22%;" id="category"><i class="fa-solid fa-layer-group" style="color: #74C0FC;"></i> Category</th>
+                                    <th style="width: 20%;"><i class="fa-solid fa-calendar-days" style="color: #74C0FC;"></i> Last Updated</th>
+                                    <th class="text-center" style="width: 20%;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="note-list"></tbody>
+                            <tbody id="hidden-note-list"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="home-notes-footer">
+                        <button type="button" class="btn btn-success home-primary-btn" id="createNoteBtn">Create Note</button>
+                        <div class="home-pagination">
+                            <button type="button" class="btn btn-outline-secondary home-page-btn" id="previousPageBtn" aria-label="Previous page">
                                 <i class="fa-solid fa-arrow-left"></i>
                             </button>
                             <span id="pageNumber" class="page-number">1</span>
-                            <button type="button" class="btn btn-outline-secondary ms-2" id="nextPageBtn">
+                            <button type="button" class="btn btn-outline-secondary home-page-btn" id="nextPageBtn" aria-label="Next page">
                                 <i class="fa-solid fa-arrow-right"></i>
                             </button>
                         </div>
-                                               
                     </div>
-                </div>
+                </section>
             </div>
-            <div class="col-4">
-                <div class="row mt-5" style="justify-content: center;">
-                    <div class="cards">
-                        <div class="cards-button">
-                            <button type="button" class="btn btn-outline-danger" id="hiddenNotesBtn">View Hidden Notes</button>
-                        </div>
-                        <div class="cards-button">
-                            <button type="button" class="btn btn-outline-info" id="settingsBtn">Settings</button>
-                        </div>
-                        <div class="cards-button">
-                            <button type="button" class="btn btn-outline-secondary" id="logoutBtn">Log Out</button>
-                        </div>
+
+            <div class="col-lg-4 home-sidebar">
+                <section class="cards home-panel home-actions-panel">
+                    <div class="home-section-heading">
+                        <h3>Quick Actions</h3>
+                        <p>Shortcuts for the things you use most.</p>
                     </div>
-                </div>
-                <div class="row mt-3" style="max-height: fit-content; justify-content: center;">
-                    <div class="todo">
-                        <div style="display: flex; justify-content: space-between; max-height: fit-content; align-items: center;">
+                    <div class="home-quick-actions">
+                        <button type="button" class="btn btn-outline-danger home-quick-action-btn" id="hiddenNotesBtn" aria-label="Hidden notes" title="Hidden Notes">
+                            <i class="fa-solid fa-lock"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-info home-quick-action-btn" id="settingsBtn" aria-label="Settings" title="Settings">
+                            <i class="fa-solid fa-gear"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary home-quick-action-btn" id="logoutBtn" aria-label="Log out" title="Log Out">
+                            <i class="fa-solid fa-door-open"></i>
+                        </button>
+                    </div>
+                </section>
+
+                <section class="todo home-panel home-todo-panel">
+                    <div class="home-section-heading home-section-heading--inline">
+                        <div>
                             <h3>To-Do</h3>
-                            <small class="text-muted">(You can add up to 6 tasks!)</small>
+                            <p>Quick personal task tracking.</p>
                         </div>
-                        <hr>
-                        <table class="table" id="todoTable">
-                            <tbody id="to-do-content" style="background-color: transparent;">
-                                
-                            </tbody>
-                        </table>
-                        <div class="cards-button text-center mt-3">
-                            <button type="button" class="btn btn-success" id="addTodo">+</button>
-                        </div>
+                        <small class="text-muted">Up to 9 tasks</small>
                     </div>
-                </div>
+                    <hr>
+                    <div class="home-todo-list">
+                        <table class="table" id="todoTable">
+                            <tbody id="to-do-content"></tbody>
+                        </table>
+                    </div>
+                    <div class="cards-button text-center mt-3">
+                        <button type="button" class="btn btn-success home-add-todo-btn" id="addTodo">Add Task</button>
+                    </div>
+                </section>
             </div>
         </div>
     </div>
 
     <div id="noteModal" class="note-modal" style="display: none;">
         <div class="note-modal-content" id="noteModalContent">
-            <span id="closeNoteModal" style="cursor: pointer; float: right; font-size: 20px;"></span>
+            <button id="closeNoteModal" class="note-modal-close" type="button" aria-label="Close preview">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
             <div id="noteContent"></div>
         </div>
     </div>
 
     <div id="welcomePopup" class="welcomePopup">
-        <div id="welcomePopupContent" style="color: rgb(255, 255, 255);">
-        </div>
+        <div id="welcomePopupContent" style="color: rgb(255, 255, 255);"></div>
     </div>
 
     <script src="js/theme.js"></script>

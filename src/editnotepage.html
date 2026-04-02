@@ -3,177 +3,150 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     
     <title>Smart Notes - Edit Note</title>
-    <style>
-        .note-control {
-            width: 100%;
-            box-sizing: border-box;
-            border-radius: 8px;
-            border: 1px solid #ced4da;
-            padding: 10px;
-            background-color: #fdfdfd;
-            transition: box-shadow 0.3s ease-in-out;
-        }
-
-        .note-control:focus {
-            box-shadow: 0 0 5px rgba(191, 161, 0, 0.5);
-            border-color: #bfa100;
-         }   
-
-        .info {
-            height: 100%;
-            width: 50%;
-            background-color: rgba(255, 255, 210, 0.822);
-            padding: 15px;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            display: flex;
-            flex-direction: column;
-        }
-        .preview {
-            height: 100%;
-            background-color: rgba(192, 192, 192, 0.822);
-            padding: 15px;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            display: flex;
-            flex-direction: column;
-        }
-        .btn {
-            border-radius: 8px;
-            font-weight: 600;
-            letter-spacing: 0.5px;
-        }
-
-        body {
-            animation: fadeIn 1s ease-in;
-        }
-
-        @keyframes fadeIn {
-            from {opacity: 0.4;}
-            to {opacity: 1;}
-        }
-
-
-    </style>
 </head>
-<body>
-    
-    <div class="container mt-3">
-        <h1>Smart Notes</h1>
-        <hr class="hr-top">
-        <div class="row mt-5" style="display: flex; justify-content: center;">
-            <div class="col-5">
-                <form id="form">
-                    <div class="form-group">
-                        <label for="title">Title</label>
-                        <input type="text" class="note-control" id="title" maxlength="50">
-                        <div></div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="content">Content</label>
-                        <textarea class="note-control" id="content" rows="10" style="resize: none;" maxlength="600"></textarea>
-                    </div>
-                    
-                    <div class="form-group d-flex justify-content-between">
-                        <p id="content-length">0 characters</p>
-                        <p id="content-words">0 words</p>
-                    </div>                    
+<body class="editor-page">
+    <main class="container editor-shell">
+        <section class="editor-hero">
+            <p class="editor-hero__eyebrow">Note Workspace</p>
+            <h1 class="editor-hero__title">Edit note</h1>
+            <p class="editor-hero__text">
+                Refine the title, content, privacy, and sharing settings in one focused view.
+            </p>
+        </section>
 
-                    <div class="form-group d-flex justify-content-between">
-                        <div class="form-category">
-                            <label for="category">Category</label>
-                            <select class="note-control" id="category">
-                            </select>
-                        </div>
-                        <div class="form-color">
-                            <label for="color">Color</label>
-                            <select class="note-control" id="color">
-                                <option value="Gray" class="option-gray" selected>Gray</option>
-                                <option value="Yellow" class="option-yellow">Yellow</option>
-                                <option value="Blue" class="option-blue">Blue</option>
-                                <option value="Red" class="option-red">Red</option>
-                                <option value="Pink" class="option-pink">Pink</option>
-                            </select>
-                        </div>
+        <div class="row editor-layout">
+            <div class="col-xl-5 col-lg-6 editor-column">
+                <section class="editor-panel editor-form-panel">
+                    <div class="editor-panel__header">
+                        <h3>Details</h3>
+                        <p>Update your note and keep the preview in sync.</p>
                     </div>
 
-                    <div class="form-group">
-                        <div class="form-check">
-                            <input type="checkbox" class="form-check-input" id="checkbox">
-                            <label for="checkbox" class="form-check-label">
-                                Private
-                            </label>
-                        </div>
-                        <div class="form-check">
-                            <input type="checkbox" class="form-check-input" id="checkboxShare">
-                            <label for="checkboxShare" class="form-check-label">
-                                Shared
-                            </label>
-                        </div>
-                        <div class="form-check" id="inputShare" style="display: none;">
-                            <label for="shareUsername" style="margin-right: 8px;">Username:</label>
-                            <input type="text" id="shareUsername" maxlength="50">
+                    <form id="form">
+                        <div class="form-group">
+                            <label for="title" class="editor-label">Title</label>
+                            <input type="text" class="note-control editor-control" id="title" maxlength="50">
                             <div></div>
                         </div>
-                    </div>
-                    <hr>
-                    <div class="buttons d-flex justify-content-between">
-                        <button type="submit" class="btn btn-success">Edit</button>
-                        <button type="button" class="btn btn-secondary" id="gobackBtn">Go Back</button>
-                    </div>
-                </form>
-            </div>
-            <div class="col-5" style="display: flex; justify-content: center;">
-                <div class="preview">
-                    <div class="form-group" style="display: flex;">
-                        <i class="fa-solid fa-heading" style="color:rgb(255, 255, 255); margin-top: 3px; margin-right: 5px;"></i> 
-                        <p id="preview-title">...</p>
-                    </div>
-                    <hr>
-                    <div class="form-group">
-                        <div id="preview-content" class="preview-box">...</div>
-                    </div>           
-                    
-                    <div class="form-group d-flex justify-content-between">
-                        <div style="display: flex;">
-                            <i class="fa-solid fa-layer-group" style="color:rgb(255, 255, 255); margin-top: 3px; margin-right: 7px;"></i>
-                            <p id="preview-category">None</p>
+                        
+                        <div class="form-group">
+                            <label for="content" class="editor-label">Content</label>
+                            <textarea class="note-control editor-control editor-control--textarea" id="content" rows="10" maxlength="600"></textarea>
                         </div>
-                        <label id="preview-hidden">
-                        </label>
-                    </div>
-                </div>
+                        
+                        <div class="editor-stats">
+                            <p id="content-length">0 characters</p>
+                            <p id="content-words">0 words</p>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-sm-6 form-group">
+                                <label for="category" class="editor-label">Category</label>
+                                <select class="note-control editor-control" id="category"></select>
+                            </div>
+                            <div class="col-sm-6 form-group">
+                                <label for="color" class="editor-label">Color</label>
+                                <select class="note-control editor-control" id="color">
+                                    <option value="Gray" class="option-gray" selected>Gray</option>
+                                    <option value="Yellow" class="option-yellow">Yellow</option>
+                                    <option value="Blue" class="option-blue">Blue</option>
+                                    <option value="Red" class="option-red">Red</option>
+                                    <option value="Pink" class="option-pink">Pink</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="editor-options">
+                            <label class="editor-toggle">
+                                <input type="checkbox" class="form-check-input" id="checkbox">
+                                <span>Private note</span>
+                            </label>
+                            <label class="editor-toggle">
+                                <input type="checkbox" class="form-check-input" id="checkboxShare">
+                                <span>Share with someone</span>
+                            </label>
+                        </div>
+
+                        <div class="form-group editor-share-row" id="inputShare" style="display: none;">
+                            <label for="shareUsername" class="editor-label">Share with username</label>
+                            <p class="editor-share-row__hint">Enter the exact username you want to share this note with.</p>
+                            <input type="text" class="note-control editor-control" id="shareUsername" maxlength="50" placeholder="Username">
+                            <div></div>
+                        </div>
+
+                        <div class="editor-actions">
+                            <button type="submit" class="btn btn-success editor-primary-btn">Save Changes</button>
+                            <button type="button" class="btn btn-secondary editor-secondary-btn" id="gobackBtn">Go Back</button>
+                        </div>
+                    </form>
+                </section>
             </div>
-            <div class="col-2" style="display: flex; justify-content: right;">
-                <div class="info" style="width: auto;">
-                    <h5>Tips & Infos</h5>
-                    <hr>
-                    <div class="info-fields">
-                        <p class="fst-italic">You can add a title, content, category, and even hide the note!</p>
+
+            <div class="col-xl-4 col-lg-6 editor-column">
+                <section class="editor-panel editor-preview-panel">
+                    <div class="editor-panel__header">
+                        <h3>Live Preview</h3>
+                        <p>See how the note feels before saving.</p>
                     </div>
-                    <hr>
-                    <div class="total-note">
-                        <p class="fst-italic">You have <span id="note-count">x</span> notes</p>
+
+                    <article class="note-preview-card editor-note-preview" id="previewSurface">
+                        <div class="note-preview-card__stripe"></div>
+                        <div class="note-preview-card__body">
+                            <div class="note-preview-card__header">
+                                <div>
+                                    <p class="note-preview-card__eyebrow">Live Preview</p>
+                                    <h2 id="preview-title" class="note-preview-card__title">...</h2>
+                                </div>
+                                <span id="preview-hidden" class="note-preview-card__badge">Visible</span>
+                            </div>
+
+                            <div class="note-preview-card__meta">
+                                <span class="note-preview-card__meta-item">
+                                    <i class="fa-solid fa-layer-group"></i>
+                                    <span id="preview-category">None</span>
+                                </span>
+                            </div>
+
+                            <div id="preview-content" class="note-preview-card__content editor-preview-content">...</div>
+                        </div>
+                    </article>
+                </section>
+            </div>
+
+            <div class="col-xl-3 col-lg-12 editor-column">
+                <section class="editor-panel editor-info-panel">
+                    <div class="editor-panel__header">
+                        <h3>Tips & Info</h3>
+                        <p>Quick context while you edit.</p>
                     </div>
-                    <hr>
-                    <div class="favourite-category">
-                        <p class="fst-italic">Your favourite category is '<span id="fav-category"></span>'</p>
+
+                    <div class="editor-info-list">
+                        <div class="editor-info-item">
+                            <p>You can adjust title, content, category, and visibility from one place.</p>
+                        </div>
+                        <div class="editor-info-item">
+                            <p>You have <span id="note-count">x</span> notes.</p>
+                        </div>
+                        <div class="editor-info-item">
+                            <p>Your favourite category is <span id="fav-category"></span>.</p>
+                        </div>
                     </div>
-                </div>
-            </div>            
+                </section>
+            </div>
         </div>
-    </div>
+    </main>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
     <script src="js/theme.js"></script>
     <script src="js/editnote.js"></script>
-
 </body>
 </html>

@@ -27,14 +27,19 @@ function renderCategories() {
         .then(categories => {
             categories.forEach((item, i) => {
                 const category = document.createElement("div");
+                category.className = "utility-category-row";
 
                 category.innerHTML = `
-                    <button class="btn btn-outline-success editCategoryBtn" style="width: 90%;">${item}</button>
-                    <button class="btn btn-outline-danger deleteCategoryBtn" style="width: 10%;">
-                        <i class="fa-solid fa-minus"></i>
+                    <button class="btn btn-outline-success editCategoryBtn utility-category-edit">
+                        <span class="utility-category-edit__content">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                            <span>${item}</span>
+                        </span>
+                    </button>
+                    <button class="btn btn-outline-danger deleteCategoryBtn utility-category-delete">
+                        <i class="fa-solid fa-trash"></i>
                     </button>
                 `;
-                category.style = "margin-top: 10px; display: flex; gap: 10px; align-items: center;";
 
                 const editCategoryBtn = category.querySelector(".editCategoryBtn");
                 editCategoryBtn.addEventListener("click", function () {
