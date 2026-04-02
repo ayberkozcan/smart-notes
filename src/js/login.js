@@ -180,7 +180,7 @@ form.addEventListener("submit", async function (e) {
 
     if (loginStatus === "signup") {
         const hasValidUsername = validateLength(username, 5, 12);
-        const hasValidPassword = validateLength(password, 5, 12);
+        const hasValidPassword = validateLength(password, 8, 64);
 
         if (!hasValidUsername || !hasValidPassword) {
             return;

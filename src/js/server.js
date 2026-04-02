@@ -13,6 +13,196 @@ const __dirname = path.dirname(__filename);
 const projectSrcDir = path.resolve(__dirname, "..");
 const dbPath = path.join(__dirname, "notes.db");
 
+const isProduction = process.env.NODE_ENV === "production";
+const sessionSecret = process.env.SESSION_SECRET || "change-this-in-production";
+const clientOrigin = process.env.CLIENT_ORIGIN || `http://localhost:${port}`;
+
+const authAttempts = new Map();
+const authWindowMs = 15 * 60 * 1000;
+const authMaxAttempts = 10;
+
+const writeAttempts = new Map();
+const writeWindowMs = 60 * 1000;
+const writeMaxAttempts = 15;
+
+function getClientIp(req) {
+    return req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.ip;
+}
+
+function cleanupRateLimitStore(store, now, windowMs) {
+    for (const [key, value] of store.entries()) {
+        if (now - value.firstRequestAt > windowMs) {
+            store.delete(key);
+        }
+    }
+}
+
+function authRateLimiter(req, res, next) {
+    const now = Date.now();
+    cleanupRateLimitStore(authAttempts, now, authWindowMs);
+
+    const identifier = `${getClientIp(req)}:${(req.body?.email || "").toLowerCase()}:${(req.body?.username || "").toLowerCase()}`;
+    const current = authAttempts.get(identifier);
+
+    if (!current) {
+        authAttempts.set(identifier, {
+            count: 1,
+            firstRequestAt: now
+        });
+        return next();
+    }
+
+    if (now - current.firstRequestAt > authWindowMs) {
+        authAttempts.set(identifier, {
+            count: 1,
+            firstRequestAt: now
+        });
+        return next();
+    }
+
+    current.count += 1;
+
+    if (current.count > authMaxAttempts) {
+        const retryAfterSeconds = Math.ceil((authWindowMs - (now - current.firstRequestAt)) / 1000);
+        res.setHeader("Retry-After", retryAfterSeconds);
+        return res.status(429).json({
+            error: "Too many authentication attempts. Please try again later."
+        });
+    }
+
+    next();
+}
+
+function writeRateLimiter(req, res, next) {
+    const now = Date.now();
+    cleanupRateLimitStore(writeAttempts, now, writeWindowMs);
+
+    const identifier = `${getClientIp(req)}:${req.session?.userId || "guest"}:${req.path}`;
+    const current = writeAttempts.get(identifier);
+
+    if (!current) {
+        writeAttempts.set(identifier, {
+            count: 1,
+            firstRequestAt: now
+        });
+        return next();
+    }
+
+    if (now - current.firstRequestAt > writeWindowMs) {
+        writeAttempts.set(identifier, {
+            count: 1,
+            firstRequestAt: now
+        });
+        return next();
+    }
+
+    current.count += 1;
+
+    if (current.count > writeMaxAttempts) {
+        const retryAfterSeconds = Math.ceil((writeWindowMs - (now - current.firstRequestAt)) / 1000);
+        res.setHeader("Retry-After", retryAfterSeconds);
+        return res.status(429).json({
+            error: "Too many create requests. Please slow down and try again."
+        });
+    }
+
+    next();
+}
+
+function clearAuthRateLimit(req) {
+    const identifier = `${getClientIp(req)}:${(req.body?.email || "").toLowerCase()}:${(req.body?.username || "").toLowerCase()}`;
+    authAttempts.delete(identifier);
+}
+
+function normalizeAuthInput(value) {
+    return String(value || "").trim();
+}
+
+function validateAuthInput(email, username, password) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!email || !username || !password) {
+        return "Email, username and password are required.";
+    }
+
+    if (!emailRegex.test(email)) {
+        return "Invalid email format.";
+    }
+
+    if (username.length < 5 || username.length > 20) {
+        return "Username must be between 5 and 20 characters.";
+    }
+
+    if (password.length < 8 || password.length > 64) {
+        return "Password must be between 8 and 64 characters.";
+    }
+
+    return null;
+}
+
+function parsePositiveInt(value) {
+    const parsed = Number.parseInt(value, 10);
+
+    if (!Number.isInteger(parsed) || parsed <= 0) {
+        return null;
+    }
+
+    return parsed;
+}
+
+function validateTextField(value, fieldName, minLength, maxLength) {
+    const normalizedValue = String(value || "").trim();
+
+    if (normalizedValue.length < minLength || normalizedValue.length > maxLength) {
+        return `${fieldName} must be between ${minLength} and ${maxLength} characters.`;
+    }
+
+    return null;
+}
+
+function validateNoteInput(title, content, category, color) {
+    const normalizedTitle = String(title || "").trim();
+    const normalizedContent = String(content || "").trim();
+    const normalizedCategory = String(category || "").trim();
+    const normalizedColor = String(color || "").trim();
+
+    if (!normalizedTitle) {
+        return "Title is required.";
+    }
+
+    if (normalizedTitle.length > 100) {
+        return "Title cannot be longer than 100 characters.";
+    }
+
+    if (normalizedContent.length > 5000) {
+        return "Content cannot be longer than 5000 characters.";
+    }
+
+    if (normalizedCategory.length > 30) {
+        return "Category cannot be longer than 30 characters.";
+    }
+
+    if (normalizedColor.length > 20) {
+        return "Color value is too long.";
+    }
+
+    return null;
+}
+
+function validateCategoryName(name) {
+    const normalizedName = String(name || "").trim();
+
+    if (!normalizedName) {
+        return "Category name is required.";
+    }
+
+    if (normalizedName.length > 30) {
+        return "Category name cannot be longer than 30 characters.";
+    }
+
+    return null;
+}
+
 const db = new sqlite3.Database(dbPath, (err) => {
     if (err) {
         console.error("Database connection error: ", err.message);
@@ -59,15 +249,24 @@ db.run(`
     )    
 `);
 
-app.use(express.json());
-app.use(cors());
+app.set("trust proxy", 1);
+
+app.use(express.json({ limit: "200kb" }));
+app.use(cors({
+    origin: clientOrigin,
+    credentials: true
+}));
 app.use(session({
-    secret: "smart-notes-dev-session",
+    name: "smartnotes.sid",
+    secret: sessionSecret,
     resave: false,
     saveUninitialized: false,
+    rolling: true,
     cookie: {
         httpOnly: true,
-        sameSite: "lax"
+        sameSite: "lax",
+        secure: isProduction,
+        maxAge: 1000 * 60 * 60 * 24
     }
 }));
 
@@ -95,16 +294,23 @@ app.get("/", (req, res) => {
 });
 
 function requireAuth(req, res, next) {
-    if (!req.session.userId) {
+    if (!req.session || !Number.isInteger(req.session.userId) || req.session.userId <= 0) {
         return res.status(401).json({ error: "Unauthorized" });
     }
 
     next();
 }
 
-app.post("/signup", (req, res) => {
-    const { email, username, password } = req.body;
+app.post("/signup", authRateLimiter, (req, res) => {
+    const email = normalizeAuthInput(req.body.email).toLowerCase();
+    const username = normalizeAuthInput(req.body.username);
+    const password = normalizeAuthInput(req.body.password);
     const date = new Date().toLocaleString();
+
+    const validationError = validateAuthInput(email, username, password);
+    if (validationError) {
+        return res.status(400).json({ error: validationError });
+    }
 
     db.get(
         "SELECT * FROM users WHERE email = ? OR username = ?",
@@ -117,20 +323,33 @@ app.post("/signup", (req, res) => {
                 return res.status(400).json({ error: "Email or username already exists!" });
             }
 
-            bcrypt.hash(password, 10, (err, hashedPassword) => {
-                if (err) {
+            bcrypt.hash(password, 12, (hashErr, hashedPassword) => {
+                if (hashErr) {
                     return res.status(500).json({ error: "Error hashing password" });
                 }
 
                 db.run(
                     "INSERT INTO users (email, username, password, created_date) VALUES (?, ?, ?, ?)",
                     [email, username, hashedPassword, date],
-                    function (err) {
-                        if (err) {
-                            return res.status(500).json({ error: err.message });
+                    function (insertErr) {
+                        if (insertErr) {
+                            return res.status(500).json({ error: insertErr.message });
                         }
-                        req.session.userId = this.lastID;
-                        res.json({ message: "Signed up successfully", id: this.lastID });
+
+                        req.session.regenerate((sessionErr) => {
+                            if (sessionErr) {
+                                return res.status(500).json({ error: "Session initialization failed" });
+                            }
+
+                            req.session.userId = this.lastID;
+                            clearAuthRateLimit(req);
+
+                            res.json({
+                                success: true,
+                                message: "Signed up successfully",
+                                id: this.lastID
+                            });
+                        });
                     }
                 );
             });
@@ -138,8 +357,15 @@ app.post("/signup", (req, res) => {
     );
 });
 
-app.post("/login", (req, res) => {
-    const { email, username, password } = req.body;
+app.post("/login", authRateLimiter, (req, res) => {
+    const email = normalizeAuthInput(req.body.email).toLowerCase();
+    const username = normalizeAuthInput(req.body.username);
+    const password = normalizeAuthInput(req.body.password);
+    
+    if (!email || !username || !password) {
+        return res.status(400).json({ error: "Email, username and password are required." });
+    }
+
     db.get(
         "SELECT * FROM users WHERE email = ? AND username = ?",
         [email, username],
@@ -151,19 +377,27 @@ app.post("/login", (req, res) => {
                 return res.status(401).json({ success: false, message: "Invalid credentials" });
             }
 
-            bcrypt.compare(password, user.password, (err, result) => {
-                if (err) {
+            bcrypt.compare(password, user.password, (compareErr, result) => {
+                if (compareErr) {
                     return res.status(500).json({ error: "Error comparing passwords" });
                 }
-                if (result) {
+                if (!result) {
+                    return res.status(401).json({ success: false, message: "Invalid credentials" });
+                }
+
+                req.session.regenerate((sessionErr) => {
+                    if (sessionErr) {
+                        return res.status(500).json({ error: "Session initialization failed" });
+                    }
+
                     req.session.userId = user.id;
+                    clearAuthRateLimit(req);
+
                     res.json({
                         success: true,
                         user: { id: user.id, email: user.email, username: user.username }
                     });
-                } else {
-                    res.status(401).json({ success: false, message: "Invalid credentials" });
-                }
+                });
             });
         }
     );
@@ -174,7 +408,7 @@ app.post("/logout", requireAuth, (req, res) => {
         if (err) {
             return res.status(500).json({ error: "Logout failed" });
         }
-        res.clearCookie("connect.sid");
+        res.clearCookie("smartnotes.sid");
         res.json({ success: true });
     });
 });
@@ -244,7 +478,12 @@ app.get("/edit-note/:id", requireAuth, (req, res) => {
     const userId = req.session.userId;
     const note_id = req.params;
 
-    db.all("SELECT * FROM notes WHERE id = ? AND user_id = ?", [note_id.id, userId], function (err, rows) {
+    const parsedNoteId = parsePositiveInt(note_id.id);
+    if (!parsedNoteId) {
+        return res.status(400).json({ error: "Invalid note id" });
+    }
+
+    db.all("SELECT * FROM notes WHERE id = ? AND user_id = ?", [parsedNoteId, userId], function (err, rows) {
         if (err) {
             return res.status(500).json({ error: err.message });
         }
@@ -257,9 +496,19 @@ app.post("/edit-note-submit", requireAuth, (req, res) => {
     const { noteId, title, content, category, color, isPrivate } = req.body;
     const date = new Date().toLocaleString();
 
+    const parsedNoteId = parsePositiveInt(noteId);
+    if (!parsedNoteId) {
+        return res.status(400).json({ error: "Invalid note id" });
+    }
+
+    const noteValidationError = validateNoteInput(title, content, category, color);
+    if (noteValidationError) {
+        return res.status(400).json({ error: noteValidationError });
+    }
+
     db.run(
             "UPDATE notes SET title = ?, content = ?, category = ?, color = ?, private = ?, created_date = ? WHERE id = ? AND user_id = ?",
-            [title, content, category, color, isPrivate, date, noteId, userId],
+            [String(title).trim(), String(content || "").trim(), String(category || "").trim(), String(color || "").trim(), isPrivate ? 1 : 0, date, parsedNoteId, userId],
             function (err) {
                 if (err) {
                     return res.status(500).json({ error: err.message });
@@ -298,7 +547,12 @@ app.delete("/delete-note/:id", requireAuth, (req, res) => {
     const noteId = req.params.id;
     const userId = req.session.userId;
 
-    db.run("DELETE FROM notes WHERE id = ? AND user_id = ?", [noteId, userId], function (err) {
+    const parsedNoteId = parsePositiveInt(noteId);
+    if (!parsedNoteId) {
+        return res.status(400).json({ error: "Invalid note id" });
+    }
+
+    db.run("DELETE FROM notes WHERE id = ? AND user_id = ?", [parsedNoteId, userId], function (err) {
         if (err) {
             return res.status(500).json({ error: err.message });
         }
@@ -310,7 +564,12 @@ app.delete("/delete-todo/:id", requireAuth, (req, res) => {
     const todoId = req.params.id;
     const userId = req.session.userId;
 
-    db.run("DELETE FROM todos WHERE id = ? AND user_id = ?", [todoId, userId], function (err) {
+    const parsedTodoId = parsePositiveInt(todoId);
+    if (!parsedTodoId) {
+        return res.status(400).json({ error: "Invalid todo id" });
+    }
+    
+    db.run("DELETE FROM todos WHERE id = ? AND user_id = ?", [parsedTodoId, userId], function (err) {
         if (err) {
             return res.status(500).json({ error: err.message });
         }
@@ -359,14 +618,19 @@ app.get("/get-categories", requireAuth, (req, res) => {
 //     })
 // });
 
-app.post("/add-note", requireAuth, (req, res) => {
+app.post("/add-note", requireAuth, writeRateLimiter, (req, res) => {
     const userId = req.session.userId;
     const { title, content, category, color, isPrivate } = req.body;
     const date = new Date().toLocaleString();
 
+    const noteValidationError = validateNoteInput(title, content, category, color);
+    if (noteValidationError) {
+        return res.status(400).json({ error: noteValidationError });
+    }
+
     db.run(
         "INSERT INTO notes (user_id, title, content, category, color, private, created_date) VALUES (?, ?, ?, ?, ?, ?, ?)",
-        [userId, title, content, category, color, isPrivate ? 1 : 0, date],
+        [userId, String(title).trim(), String(content || "").trim(), String(category || "").trim(), String(color || "").trim(), isPrivate ? 1 : 0, date],
         function (err) {
             if (err) {
                 return res.status(500).json({ error: err.message });
@@ -429,15 +693,20 @@ app.get("/check-username/:username", requireAuth, (req, res) => {
     });
 });
 
-app.post("/add-todo", requireAuth, (req, res) => {
+app.post("/add-todo", requireAuth, writeRateLimiter, (req, res) => {
     const userId = req.session.userId;
     const { title } = req.body;
     const date = new Date().toLocaleString();
     const isDone = 0;
 
+    const todoValidationError = validateTextField(title, "Title", 1, 50);
+    if (todoValidationError) {
+        return res.status(400).json({ error: todoValidationError });
+    }
+
     db.run(
         "INSERT INTO todos (user_id, title, isDone, created_date) VALUES (?, ?, ?, ?)",
-        [userId, title, isDone, date],
+        [userId, String(title).trim(), isDone, date],
         function (err) {
             if (err) {
                 return res.status(500).json({ error: err.message });
@@ -522,6 +791,11 @@ app.post("/password-validation", requireAuth, (req, res) => {
     const userId = req.session.userId;
     const { password } = req.body;
 
+    const normalizedPassword = String(password || "").trim();
+    if (!normalizedPassword) {
+        return res.status(400).json({ error: "Password is required." });
+    }
+
     db.get("SELECT * FROM users WHERE id = ?", [userId], (err, row) => {
         if (err) {
             return res.status(500).json({ error: "Database error: " + err.message });
@@ -530,7 +804,7 @@ app.post("/password-validation", requireAuth, (req, res) => {
             return res.status(404).json({ success: false });
         }
 
-        bcrypt.compare(password, row.password, (compareErr, result) => {
+        bcrypt.compare(normalizedPassword, row.password, (compareErr, result) => {
             if (compareErr) {
                 return res.status(500).json({ error: "Error comparing passwords" });
             }
@@ -576,6 +850,16 @@ app.post("/edit-category", requireAuth, (req, res) => {
     const userId = req.session.userId;
     const { category_index, newName } = req.body;
 
+    const parsedCategoryIndex = Number.parseInt(category_index, 10);
+    if (!Number.isInteger(parsedCategoryIndex) || parsedCategoryIndex < 0) {
+        return res.status(400).json({ error: "Invalid category index" });
+    }
+
+    const categoryValidationError = validateCategoryName(newName);
+    if (categoryValidationError) {
+        return res.status(400).json({ error: categoryValidationError });
+    }
+
     db.get("SELECT categories FROM users WHERE id = ?", [userId], (err, row) => {
         if (err) {
             return res.status(500).json({ error: err.message });
@@ -585,11 +869,11 @@ app.post("/edit-category", requireAuth, (req, res) => {
         }
 
         let categories = JSON.parse(row.categories);
-        if (category_index < 0 || category_index >= categories.length) {
+        if (parsedCategoryIndex < 0 || parsedCategoryIndex >= categories.length) {
             return res.status(400).json({ error: "Invalid category index" });
         }
 
-        categories[category_index] = newName;
+        categories[parsedCategoryIndex] = String(newName).trim();
 
         db.run(
             "UPDATE users SET categories = ? WHERE id = ?",
@@ -624,6 +908,13 @@ app.post("/add-category", requireAuth, (req, res) => {
     const userId = req.session.userId;
     const { name } = req.body;
 
+    const categoryValidationError = validateCategoryName(name);
+    if (categoryValidationError) {
+        return res.status(400).json({ error: categoryValidationError });
+    }
+
+    const normalizedCategoryName = String(name).trim();
+
     db.get("SELECT categories FROM users WHERE id = ?", [userId], (err, row) => {
         if (err) {
             return res.status(500).json({ error: err.message });
@@ -638,11 +929,11 @@ app.post("/add-category", requireAuth, (req, res) => {
             return res.status(400).json({ error: "Maximum number of categories reached" });
         }
 
-        if (categories.includes(name)) {
+        if (categories.includes(normalizedCategoryName)) {
             return res.status(400).json({ error: "This category already exists!" });
         }
         
-        categories.push(name);
+        categories.push(normalizedCategoryName);
 
         db.run("UPDATE users SET categories = ? WHERE id = ?",
             [JSON.stringify(categories), userId],
@@ -660,6 +951,11 @@ app.delete("/delete-category/:category_index", requireAuth, (req, res) => {
     const userId = req.session.userId;
     const { category_index } = req.params;
 
+    const parsedCategoryIndex = Number.parseInt(category_index, 10);
+    if (!Number.isInteger(parsedCategoryIndex) || parsedCategoryIndex < 0) {
+        return res.status(400).json({ error: "Invalid category index" });
+    }
+
     db.get("SELECT categories FROM users WHERE id = ?", [userId], (err, row) => {
         if (err) {
             return res.status(500).json({ error: err.message });
@@ -669,11 +965,11 @@ app.delete("/delete-category/:category_index", requireAuth, (req, res) => {
         }
 
         let categories = JSON.parse(row.categories);
-        if (category_index < 0 || category_index >= categories.length) {
+        if (parsedCategoryIndex < 0 || parsedCategoryIndex >= categories.length) {
             return res.status(400).json({ error: "Invalid category index" });
         }
 
-        categories.splice(category_index, 1);
+        categories.splice(parsedCategoryIndex, 1);
 
         db.run(
             "UPDATE users SET categories = ? WHERE id = ?",
