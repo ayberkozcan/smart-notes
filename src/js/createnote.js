@@ -24,18 +24,35 @@ const shareUsername = document.getElementById("shareUsername");
 let noteSuccessTitle = false;
 let noteSuccessUsername = false;
 
+async function fetchJson(url, options = {}) {
+    const response = await fetch(url, options);
+
+    if (response.status === 401) {
+        localStorage.setItem("isVerified", "false");
+        localStorage.removeItem("userData");
+        sessionStorage.removeItem("welcomeShown");
+        window.location.href = "loginpage.html";
+        throw new Error("Unauthorized");
+    }
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.error || "Request failed");
+    }
+
+    return data;
+}
+
 function renderCategories() {
     categoriesSelectBox.innerHTML = "";
 
-    fetch("http://localhost:3000/get-categories")
-        .then(response => response.json())
+    fetchJson("http://localhost:3000/get-categories")
         .then(categories => {
-            categories.forEach(item => {
-                let i = 1;
+            categories.forEach((item, index) => {
                 const option = document.createElement("option");
-                option.innerHTML = `
-                    <option value="${i}">${item}</option>
-                `;
+                option.value = item;
+                option.textContent = item;
                 categoriesSelectBox.appendChild(option);
             });
 
@@ -43,23 +60,22 @@ function renderCategories() {
                 previewCategory.textContent = categoriesSelectBox.options[0].textContent;
             }
         })
+        .catch(err => console.error("Error fetching categories:", err));
 }
 
 renderCategories();
 
 function renderInfo() {
     
-    fetch("http://localhost:3000/get-note-count")
-        .then(response => response.json())
+    fetchJson("http://localhost:3000/get-note-count")
         .then(count => {
             noteCount.innerHTML = count["COUNT(id)"];
         })
         .catch(err => console.error("Error fetching note count:", err));
 
-    fetch("http://localhost:3000/get-fav-category")
-        .then(response => response.json())
+    fetchJson("http://localhost:3000/get-fav-category")
         .then(category => {
-            favCategory.innerHTML = category["MAX(category)"];
+            favCategory.innerHTML = category["MAX(category)"] || "None";
         })   
         .catch(err => console.error("Error fetching favourite category:", err));
 }
@@ -92,14 +108,19 @@ function checkRequired(input) {
             noteSuccessUsername = false;
         } else {
             success(shareUsername);
+            noteSuccessUsername = true;
         }
     }
 }
 
 async function checkUsername(username) {
     try {
-        const response = await fetch(`http://localhost:3000/check-username/${encodeURIComponent(username)}`);
-        const data = await response.json();
+        const data = await fetchJson(`http://localhost:3000/check-username/${encodeURIComponent(username)}`);
+
+        if (data.self) {
+            alert("You can't share the note with yourself!");
+            return false;
+        }
 
         if (!data.found) {
             alert("User cannot be found!");
@@ -128,8 +149,8 @@ content.addEventListener("input", function () {
     previewContent.innerHTML = content.value.trim() === "" ? "..." : content.value;
 });
 
-category.addEventListener("change", function () {
-    previewCategory.innerText = category.value;
+categoriesSelectBox.addEventListener("change", function () {
+    previewCategory.innerText = categoriesSelectBox.value;
 });
 
 color.addEventListener("change", function () {
@@ -208,22 +229,16 @@ form.addEventListener("submit", async function(e) {
             noteData.username = shareUsername.value;
         }
 
-        fetch(`http://localhost:3000/${path}`, {
+        fetchJson(`http://localhost:3000/${path}`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify(noteData)
         })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error("An error occurred while adding the note!");
-            }
-            return response.json();
-        })
         .then(data => {
-            window.location.href = "homepage.html";
             alert(data.message);
+            window.location.href = "homepage.html";
         })
         .catch(error => {
             console.error("Error:", error);

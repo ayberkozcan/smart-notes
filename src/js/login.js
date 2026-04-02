@@ -3,8 +3,6 @@ const email = document.getElementById("email");
 const username = document.getElementById("username");
 const password = document.getElementById("password");
 let checkBox = document.getElementById("checkbox");
-let header = document.querySelector(".card-header").innerHTML;
-
 const savedData = JSON.parse(localStorage.getItem('userData'));
 
 if (savedData) {
@@ -15,56 +13,73 @@ if (savedData) {
 
 let loginStatus = "login";
 let loginSuccess = false;
-let signupSuccessCounter = 0;
 
 let inputs = [email, username, password];
 
-function checkInputsForLogin(inputs) {
+async function fetchJson(url, options = {}) {
+    const response = await fetch(url, options);
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+        throw new Error(data.error || data.message || "Request failed");
+    }
+
+    return data;
+}
+
+function clearValidationState() {
+    inputs.forEach(function(input) {
+        input.className = "form-control";
+        const div = input.nextElementSibling;
+        div.innerText = "";
+        div.className = "";
+    });
+}
+
+async function checkInputsForLogin() {
     const emailValue = email.value.trim();
     const usernameValue = username.value.trim();
     const passwordValue = password.value.trim();
 
-    fetch('http://localhost:3000/login', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            email: emailValue,
-            username: usernameValue,
-            password: passwordValue
-        })
-    })
-    .then(response => {
-        if (!response.ok) {
-            return response.text().then(text => {
-                // throw new Error(text);
-                alert("Invalid Email, Username or Password!");
-            });
-        }
-        return response.json();
-    })
-    .then(data => {
+    try {
+        const data = await fetchJson("http://localhost:3000/login", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                email: emailValue,
+                username: usernameValue,
+                password: passwordValue
+            })
+        });
+
         if (data.success) {
             loginSuccess = true;
+            localStorage.setItem("isVerified", "false");
+            sessionStorage.removeItem("welcomeShown");
 
             if (checkBox.checked) {
                 const userData = {
-                    email: email.value,
-                    username: username.value
+                    email: emailValue,
+                    username: usernameValue
                 };
-                localStorage.setItem('userData', JSON.stringify(userData));
+                localStorage.setItem("userData", JSON.stringify(userData));
+            } else {
+                localStorage.removeItem("userData");
             }
-            // const now = Date.now();
-            // localStorage.setItem("welcomePopupTime", now);
+
             alert("Login Successful!");
             window.location.href = "homepage.html";
         } else {
             loginSuccess = false;
             alert("Invalid Email, Username or Password!");
         }
-    })
-    .catch(err => console.error("Error: ", err));
+    } catch (err) {
+        loginSuccess = false;
+        console.error("Error: ", err);
+        alert("Invalid Email, Username or Password!");
+    }
 }
 
 
@@ -84,74 +99,89 @@ function checkEmail(input) {
     
     if (re.test(input.value)) {
         success(input);
-        signupSuccessCounter++;
+        return true;
     } else {
         error(input, 'Invalid Email!');
+        return false;
     }
 }
 
 function checkRequired(inputs) {
+    let isValid = true;
+
     inputs.forEach(function(input) {
-        if (input.value === "") {
+        if (input.value.trim() === "") {
             error(input, `${input.id} is required.`);
+            isValid = false;
         } else {
             success(input);
-            signupSuccessCounter++;
         }
     });
+
+    return isValid;
 }
 
 function checkLength(input, min, max) {
     if (input.value.length < min || input.value.length > max) {
         error(input, `${input.id} must be ${min} - ${max} characters long!`);
+        return false;
     } else {
         success(input);
-        signupSuccessCounter++;
+        return true;
     }
 }
 
-form.addEventListener("submit", function(e) {
+form.addEventListener("submit", async function(e) {
     e.preventDefault();
 
     if (loginStatus == "login") { // login
-        checkRequired([email, username, password]);
-        checkEmail(email);
-        checkInputsForLogin([email, username, password]);
-    } else { // sign up
-        checkRequired([email, username, password]);
-        checkEmail(email);
-        checkLength(username, 5, 12);
-        checkLength(password, 5, 12);
+        const hasRequiredFields = checkRequired([email, username, password]);
+        const hasValidEmail = checkEmail(email);
 
-        if (signupSuccessCounter == 6) {
+        if (hasRequiredFields && hasValidEmail) {
+            await checkInputsForLogin();
+        }
+    } else { // sign up
+        const hasRequiredFields = checkRequired([email, username, password]);
+        const hasValidEmail = checkEmail(email);
+        const hasValidUsernameLength = checkLength(username, 5, 12);
+        const hasValidPasswordLength = checkLength(password, 5, 12);
+
+        if (hasRequiredFields && hasValidEmail && hasValidUsernameLength && hasValidPasswordLength) {
             const userData = {
                 email: email.value.trim(),
                 username: username.value.trim(),
                 password: password.value.trim()
             };
     
-            fetch("http://localhost:3000/signup", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(userData)
-            })
-            .then(response => response.json().then(data => ({ status: response.status, body: data })))
-            .then(({ status, body }) => {
-                if (status !== 200) {
-                    throw new Error(body.error || "An error occurred while adding the user!");
+            try {
+                const data = await fetchJson("http://localhost:3000/signup", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(userData)
+                });
+
+                localStorage.setItem("isVerified", "false");
+                sessionStorage.removeItem("welcomeShown");
+
+                if (checkBox.checked) {
+                    localStorage.setItem("userData", JSON.stringify({
+                        email: userData.email,
+                        username: userData.username
+                    }));
+                } else {
+                    localStorage.removeItem("userData");
                 }
-                alert(body.message);
+
+                alert(data.message);
                 window.location.href = "homepage.html";
-            })
-            .catch(error => {
+            } catch (error) {
                 console.error("Error:", error);
                 alert(error.message);
-            });            
+            }
         }
-
-        signupSuccessCounter = 0;
     }
 });
 
@@ -161,12 +191,7 @@ document.getElementById("signupBtn").addEventListener("click", function(e) {
     if (loginStatus == "login") {
         loginStatus = "signup";
 
-        inputs.forEach(function(input) {
-            input.className = "form-control";
-            const div = input.nextElementSibling;
-            div.innerText = "";
-            div.className = "";
-        });
+        clearValidationState();
 
         checkBox.checked = false;
         
@@ -180,12 +205,7 @@ document.getElementById("signupBtn").addEventListener("click", function(e) {
     } else {
         loginStatus = "login";
 
-        inputs.forEach(function(input) {
-            input.className = "form-control";
-            const div = input.nextElementSibling;
-            div.innerText = "";
-            div.className = "";
-        });
+        clearValidationState();
 
         checkBox.checked = false;
         

@@ -27,38 +27,54 @@ const shareUsername = document.getElementById("shareUsername");
 let noteSuccessTitle = false;
 let noteSuccessUsername = false;
 
+async function fetchJson(url, options = {}) {
+    const response = await fetch(url, options);
+
+    if (response.status === 401) {
+        localStorage.setItem("isVerified", "false");
+        localStorage.removeItem("userData");
+        sessionStorage.removeItem("welcomeShown");
+        window.location.href = "loginpage.html";
+        throw new Error("Unauthorized");
+    }
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.error || "Request failed");
+    }
+
+    return data;
+}
+
 function renderCategories() {
     categoriesSelectBox.innerHTML = "";
 
-    fetch("http://localhost:3000/get-categories")
-        .then(response => response.json())
+    fetchJson("http://localhost:3000/get-categories")
         .then(categories => {
-            categories.forEach(item => {
-                let i = 1;
+            categories.forEach((item) => {
                 const option = document.createElement("option");
-                option.innerHTML = `
-                    <option value="${i}">${item}</option>
-                `;
+                option.value = item;
+                option.textContent = item;
                 categoriesSelectBox.appendChild(option);
             });
         })
+        .catch(err => console.error("Error fetching categories:", err));
 }
 
 renderCategories();
 
 function renderInfo() {
     
-    fetch("http://localhost:3000/get-note-count")
-        .then(response => response.json())
+    fetchJson("http://localhost:3000/get-note-count")
         .then(count => {
             noteCount.innerHTML = count["COUNT(id)"];
         })
         .catch(err => console.error("Error fetching note count:", err));
 
-    fetch("http://localhost:3000/get-fav-category")
-        .then(response => response.json())
+    fetchJson("http://localhost:3000/get-fav-category")
         .then(category => {
-            favCategory.innerHTML = category["MAX(category)"];
+            favCategory.innerHTML = category["MAX(category)"] || "None";
         })   
         .catch(err => console.error("Error fetching favourite category:", err));
 }
@@ -68,8 +84,7 @@ renderInfo();
 function getNote() {
     const id = noteId;
 
-    fetch(`http://localhost:3000/edit-note/${id}`)
-        .then(response => response.json())
+    fetchJson(`http://localhost:3000/edit-note/${id}`)
         .then(data => {
             if (data.length > 0) {
                 const note = data[0];
@@ -82,13 +97,14 @@ function getNote() {
 
                 checkbox.checked = note.private ? true : false;
                 previewHidden.innerHTML = checkbox.checked ? `<i class="fa-solid fa-lock" style="padding: 5px;"></i>` : ``;
-                category.value = note.category;
+                categoriesSelectBox.value = note.category;
                 color.value = note.color;
-                previewCategory.innerHTML = note.category
+                previewCategory.innerHTML = note.category;
                 
                 changeColor(color.options[color.selectedIndex].text);
             } else {
-                console.log("Note cannot be found.");
+                alert("Note cannot be found.");
+                window.location.href = "homepage.html";
             }
         })
         .catch(error => console.error("Error: ", error));
@@ -122,14 +138,19 @@ function checkRequired(input) {
             noteSuccessUsername = false;
         } else {
             success(shareUsername);
+            noteSuccessUsername = true;
         }
     }
 }
 
 async function checkUsername(username) {
     try {
-        const response = await fetch(`http://localhost:3000/check-username/${encodeURIComponent(username)}`);
-        const data = await response.json();
+        const data = await fetchJson(`http://localhost:3000/check-username/${encodeURIComponent(username)}`);
+
+        if (data.self) {
+            alert("You can't share the note with yourself!");
+            return false;
+        }
 
         if (!data.found) {
             alert("User cannot be found!");
@@ -162,8 +183,8 @@ function loadContent() {
     previewContent.innerHTML = content.value.trim() === "" ? "..." : content.value;
 }
 
-category.addEventListener("change", function () {
-    let selectedText = category.options[category.selectedIndex].text;
+categoriesSelectBox.addEventListener("change", function () {
+    let selectedText = categoriesSelectBox.options[categoriesSelectBox.selectedIndex].text;
     previewCategory.innerHTML = selectedText;
 });
 
@@ -247,25 +268,16 @@ form.addEventListener("submit", async function(e) {
             noteData.username = shareUsername.value;
         }
 
-        console.log(noteData);
-
-        fetch(`http://localhost:3000/${path}`, {
+        fetchJson(`http://localhost:3000/${path}`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify(noteData)
         })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error("An error occured while updating the note!");
-            }
-            window.location.href = "homepage.html";
-            return response.json();
-        })
         .then(data => {
-            window.location.href = "homepage.html";
             alert(data.message);
+            window.location.href = "homepage.html";
         })
         .catch(error => {
             console.error("Error: ", error);

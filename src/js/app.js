@@ -33,6 +33,8 @@ let notesData = [];
 let sortField = null;
 let sortDirection = "asc";
 let displayedNotes = [];
+let todosData = [];
+let displayedTodos = [];
 
 if (localStorage.getItem("theme") === "dark") {
     table.classList.add("table-dark");
@@ -43,7 +45,8 @@ if (localStorage.getItem("theme") === "dark") {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    const username = "asd";
+    const savedUserData = JSON.parse(localStorage.getItem("userData"));
+    const username = savedUserData?.username || "there";
 
     if (sessionStorage.getItem("welcomeShown")) {
         welcomePopup.style.display = "none";
@@ -82,7 +85,6 @@ sharedNotesBtn.addEventListener("click", function () {
 
 document.getElementById("searchInput").addEventListener("input", function () {
     const input = this.value.toLowerCase();
-    console.log(input);
 
     const filteredNotes = notesData.filter(note => 
         note.title.toLowerCase().includes(input)
@@ -91,6 +93,26 @@ document.getElementById("searchInput").addEventListener("input", function () {
     displayedNotes = filteredNotes;
     drawNotes(displayedNotes);
 });
+
+async function fetchJson(url, options = {}) {
+    const response = await fetch(url, options);
+
+    if (response.status === 401) {
+        localStorage.setItem("isVerified", "false");
+        localStorage.removeItem("userData");
+        sessionStorage.removeItem("welcomeShown");
+        window.location.href = "loginpage.html";
+        throw new Error("Unauthorized");
+    }
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.error || "Request failed");
+    }
+
+    return data;
+}
 
 function renderNotes() {
     tbody.innerHTML = "";
@@ -107,8 +129,7 @@ function renderNotes() {
         }
     }
     
-    fetch(`http://localhost:3000/${path}`)
-        .then(response => response.json())
+    fetchJson(`http://localhost:3000/${path}`)
         .then(notes => {
             notesData = notes;
             displayedNotes = [...notesData];
@@ -177,8 +198,7 @@ function drawNotes(notes) {
             deleteNoteBtn.addEventListener("click", function() {
                 const confirmation = window.confirm("Are you sure you want to delete this note?");
                 if (confirmation) {
-                    fetch(`http://localhost:3000/delete-note/${item.id}`, { method: "DELETE" })
-                        .then(response => response.json())
+                    fetchJson(`http://localhost:3000/delete-note/${item.id}`, { method: "DELETE" })
                         .then(() => {
                             alert("Note deleted.");
                             renderNotes();
@@ -233,8 +253,7 @@ renderToDos();
 function renderToDos() {
     todoContent.innerHTML = "";
 
-    fetch(`http://localhost:3000/todos`)
-        .then(response => response.json())
+    fetchJson(`http://localhost:3000/todos`)
         .then(todos => {
             todosData = todos;
             displayedTodos = [...todosData];
@@ -290,7 +309,23 @@ function drawTodos(todos) {
                         isDone: isChecked ? 1 : 0
                     })
                 })
-                .then(res => res.json())
+                .then(res => {
+                    if (res.status === 401) {
+                        localStorage.setItem("isVerified", "false");
+                        localStorage.removeItem("userData");
+                        sessionStorage.removeItem("welcomeShown");
+                        window.location.href = "loginpage.html";
+                        throw new Error("Unauthorized");
+                    }
+
+                    return res.json().then(data => {
+                        if (!res.ok) {
+                            throw new Error(data.error || "Request failed");
+                        }
+
+                        return data;
+                    });
+                })
                 .then(data => console.log("Updated:", data))
                 .catch(err => {
                     console.error("Error:", err);
@@ -301,10 +336,9 @@ function drawTodos(todos) {
 
             const deleteTodoBtn = row.querySelector(".deleteTodoBtn");
             deleteTodoBtn.addEventListener("click", function() {
-                fetch(`http://localhost:3000/delete-todo/${item.id}`, { method: "DELETE" })
-                    .then(response => response.json())
+                fetchJson(`http://localhost:3000/delete-todo/${item.id}`, { method: "DELETE" })
                     .then(() => {
-                        renderNotes();
+                        renderToDos();
                     })
                     .catch(err => console.error("Error:", err));
             });
@@ -328,7 +362,7 @@ hiddenNotesBtn.addEventListener("click", function(e) {
     
         renderNotes();
     } else {
-        window.location.href = "hiddennotesverification.html";
+        window.location.href = "hiddennotesverify.html";
     }
 });
 
@@ -341,20 +375,17 @@ document.getElementById("addTodo").addEventListener("click", function (e) {
         alert("You've reached task limit!");
     } else {
         let title = prompt("Enter task: ");
+        if (title === null) {
+            return;
+        }
         if (title.length > 50) {
             alert("Task cannot be longer than 50 characters");
         } else {
             if (title && title.trim() !== "") {
-                fetch(`http://localhost:3000/add-todo`, {
+                fetchJson(`http://localhost:3000/add-todo`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ title: title.trim() })
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        return response.json().then(err => { throw new Error(err.error); });
-                    }
-                    return response.json();
                 })
                 .then(data => {
                     renderToDos();
@@ -388,7 +419,15 @@ settingsBtn.addEventListener("click", function(e) {
 logoutBtn.addEventListener("click", function(e) {
     localStorage.setItem('isVerified', 'false');
     localStorage.removeItem('userData');
-    window.location.href = "loginpage.html"; 
+    sessionStorage.removeItem("welcomeShown");
+
+    fetch("http://localhost:3000/logout", {
+        method: "POST"
+    })
+    .catch(err => console.error("Logout error:", err))
+    .finally(() => {
+        window.location.href = "loginpage.html";
+    });
 });
 
 document.addEventListener('DOMContentLoaded', () => {

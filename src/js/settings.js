@@ -1,5 +1,25 @@
 let theme = localStorage.getItem("theme") || "dark";
 
+async function fetchJson(url, options = {}) {
+    const response = await fetch(url, options);
+
+    if (response.status === 401) {
+        localStorage.setItem("isVerified", "false");
+        localStorage.removeItem("userData");
+        sessionStorage.removeItem("welcomeShown");
+        window.location.href = "loginpage.html";
+        throw new Error("Unauthorized");
+    }
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+        throw new Error(data.error || "Request failed");
+    }
+
+    return data;
+}
+
 document.addEventListener("DOMContentLoaded", function () {
     if (theme === "light") {
         document.body.classList.add("bg-light", "text-dark");
@@ -41,28 +61,30 @@ document.getElementById("manageCategoriesBtn").addEventListener("click", functio
 document.getElementById("deleteDataBtn").addEventListener("click", function () {
     let password = prompt("Enter your password: ");
 
-    fetch(`http://localhost:3000/password-validation`, {
+    if (password === null) {
+        return;
+    }
+
+    const trimmedPassword = password.trim();
+
+    if (trimmedPassword === "") {
+        alert("Password is required.");
+        return;
+    }
+
+    fetchJson("http://localhost:3000/password-validation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password: password.trim() })
-    })
-    .then(response => {
-        if(!response.ok) {
-            return response.json().then(() => {
-                alert("Wrong Password!");
-            });
-        }
-        return response.json();
+        body: JSON.stringify({ password: trimmedPassword })
     })
     .then(data => {
         if (data.success) {
             const confirmation = window.confirm("Are you sure you want to delete your all notes?\nThis action cannot be undone.");
         
             if (confirmation) {
-                fetch("http://localhost:3000/delete-all-data", { method: "DELETE" })
-                    .then(response => response.json())
-                    .then(() => {
-                        alert("All notes deleted.");
+                fetchJson("http://localhost:3000/delete-all-data", { method: "DELETE" })
+                    .then((deleteData) => {
+                        alert(deleteData.message || "All notes deleted.");
                     })
                     .catch(err => console.error("Error:", err));
             }
@@ -71,6 +93,8 @@ document.getElementById("deleteDataBtn").addEventListener("click", function () {
         }
     })
     .catch(err => {
-        alert("Error: " + err.message);
+        if (err.message !== "Unauthorized") {
+            alert("Error: " + err.message);
+        }
     })
 });
