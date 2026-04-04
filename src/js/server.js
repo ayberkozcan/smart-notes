@@ -3,6 +3,7 @@ import sqlite3 from 'sqlite3';
 import cors from 'cors';
 import session from 'express-session';
 import bcrypt from 'bcrypt';
+import crypto from 'crypto';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -24,6 +25,8 @@ const authMaxAttempts = 10;
 const writeAttempts = new Map();
 const writeWindowMs = 60 * 1000;
 const writeMaxAttempts = 15;
+const reservedShareCodes = new Map();
+const shareCodeReservationMs = 10 * 60 * 1000;
 
 function getClientIp(req) {
     return req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.ip;
@@ -33,6 +36,16 @@ function cleanupRateLimitStore(store, now, windowMs) {
     for (const [key, value] of store.entries()) {
         if (now - value.firstRequestAt > windowMs) {
             store.delete(key);
+        }
+    }
+}
+
+function cleanupReservedShareCodes() {
+    const now = Date.now();
+
+    for (const [code, reservedAt] of reservedShareCodes.entries()) {
+        if (now - reservedAt > shareCodeReservationMs) {
+            reservedShareCodes.delete(code);
         }
     }
 }
@@ -203,6 +216,69 @@ function validateCategoryName(name) {
     return null;
 }
 
+function generateShareCodeValue(length = 10) {
+    const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    const bytes = crypto.randomBytes(length);
+    let code = "";
+
+    for (let index = 0; index < length; index += 1) {
+        code += alphabet[bytes[index] % alphabet.length];
+    }
+
+    return code;
+}
+
+function generateUniqueShareCode(callback) {
+    cleanupReservedShareCodes();
+
+    const candidate = generateShareCodeValue();
+    if (reservedShareCodes.has(candidate)) {
+        return generateUniqueShareCode(callback);
+    }
+
+    db.get("SELECT id FROM notes WHERE share_code = ?", [candidate], (err, row) => {
+        if (err) {
+            return callback(err);
+        }
+
+        if (row) {
+            return generateUniqueShareCode(callback);
+        }
+
+        reservedShareCodes.set(candidate, Date.now());
+        callback(null, candidate);
+    });
+}
+
+function consumeReservedShareCode(code) {
+    reservedShareCodes.delete(String(code || "").trim().toUpperCase());
+}
+
+function validateShareCode(code) {
+    const normalizedCode = String(code || "").trim().toUpperCase();
+
+    if (!normalizedCode) {
+        return null;
+    }
+
+    if (!/^[A-Z2-9]{10}$/.test(normalizedCode)) {
+        return "Invalid share code.";
+    }
+
+    return null;
+}
+
+function parseSharedUsers(value) {
+    return String(value || "")
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean);
+}
+
+function buildSharedUsersValue(users) {
+    return Array.from(new Set(users.map((item) => String(item || "").trim()).filter(Boolean))).join(",");
+}
+
 const db = new sqlite3.Database(dbPath, (err) => {
     if (err) {
         console.error("Database connection error: ", err.message);
@@ -234,10 +310,40 @@ db.run(`
         category TEXT,
         color TEXT,
         private BOOLEAN,
+        share_code TEXT UNIQUE,
         shared_user TEXT,
         created_date TEXT DEFAULT (datetime('now'))
     )
 `);
+
+db.all("PRAGMA table_info(notes)", (err, columns) => {
+    if (err) {
+        return console.error("Notes schema read error: ", err.message);
+    }
+
+    const hasShareCodeColumn = columns.some((column) => column.name === "share_code");
+    const ensureShareCodeIndex = () => {
+        db.run("CREATE UNIQUE INDEX IF NOT EXISTS idx_notes_share_code ON notes(share_code)", (indexErr) => {
+            if (indexErr) {
+                console.error("Failed to create share_code index: ", indexErr.message);
+            }
+        });
+    };
+
+    if (hasShareCodeColumn) {
+        ensureShareCodeIndex();
+        return;
+    }
+
+    db.run("ALTER TABLE notes ADD COLUMN share_code TEXT", (alterErr) => {
+        if (alterErr) {
+            console.error("Failed to add share_code column: ", alterErr.message);
+            return;
+        }
+
+        ensureShareCodeIndex();
+    });
+});
 
 db.run(`
     CREATE TABLE IF NOT EXISTS todos (
@@ -413,10 +519,20 @@ app.post("/logout", requireAuth, (req, res) => {
     });
 });
 
+app.post("/generate-share-code", requireAuth, writeRateLimiter, (req, res) => {
+    generateUniqueShareCode((err, shareCode) => {
+        if (err) {
+            return res.status(500).json({ error: "Failed to generate share code" });
+        }
+
+        res.json({ shareCode });
+    });
+});
+
 app.get("/notes", requireAuth, (req, res) => {
     const userId = req.session.userId;
 
-    db.all("SELECT * FROM notes WHERE user_id = ? AND private = 0 AND shared_user IS NULL ORDER BY created_date DESC", [userId], (err, rows) => {
+    db.all("SELECT *, CASE WHEN user_id = ? THEN 1 ELSE 0 END AS is_owner FROM notes WHERE user_id = ? AND private = 0 AND shared_user IS NULL ORDER BY created_date DESC", [userId, userId], (err, rows) => {
         if (err) {
             return res.status(500).json({ error: err.message });
         }
@@ -435,13 +551,17 @@ app.get("/notes-shared", requireAuth, (req, res) => {
         const username = row.username;
 
         db.all(
-            `SELECT * FROM notes 
-             WHERE private = 0 
-             AND shared_user IS NOT NULL 
-             AND shared_user != '' 
-             AND shared_user LIKE ? 
+            `SELECT *,
+                    CASE WHEN user_id = ? THEN 1 ELSE 0 END AS is_owner
+             FROM notes 
+             WHERE private = 0
+             AND (
+                (user_id = ? AND share_code IS NOT NULL AND share_code != '')
+                OR
+                (shared_user IS NOT NULL AND shared_user != '' AND shared_user LIKE ?)
+             )
              ORDER BY created_date DESC`,
-            [`%${username}%`],
+            [userId, userId, `%${username}%`],
             (err, rows) => {
                 if (err) {
                     return res.status(500).json({ error: err.message });
@@ -449,6 +569,69 @@ app.get("/notes-shared", requireAuth, (req, res) => {
                 res.json(rows);
             }
         );
+    });
+});
+
+app.post("/accept-share-code", requireAuth, writeRateLimiter, (req, res) => {
+    const userId = req.session.userId;
+    const normalizedShareCode = String(req.body?.shareCode || "").trim().toUpperCase();
+    const shareCodeValidationError = validateShareCode(normalizedShareCode);
+
+    if (shareCodeValidationError) {
+        return res.status(400).json({ error: shareCodeValidationError });
+    }
+
+    db.get("SELECT username FROM users WHERE id = ?", [userId], (userErr, currentUser) => {
+        if (userErr) {
+            return res.status(500).json({ error: "Database error: " + userErr.message });
+        }
+
+        if (!currentUser) {
+            return res.status(404).json({ error: "Current user not found" });
+        }
+
+        db.get("SELECT * FROM notes WHERE share_code = ? AND private = 0", [normalizedShareCode], (noteErr, note) => {
+            if (noteErr) {
+                return res.status(500).json({ error: "Database error: " + noteErr.message });
+            }
+
+            if (!note) {
+                return res.status(404).json({ error: "Share code could not be found." });
+            }
+
+            if (note.user_id === userId) {
+                return res.status(400).json({ error: "You already own this shared note." });
+            }
+
+            const sharedUsers = parseSharedUsers(note.shared_user);
+            if (sharedUsers.includes(currentUser.username)) {
+                return res.status(400).json({ error: "This shared note is already in your list." });
+            }
+
+            db.get("SELECT username FROM users WHERE id = ?", [note.user_id], (ownerErr, owner) => {
+                if (ownerErr) {
+                    return res.status(500).json({ error: "Database error: " + ownerErr.message });
+                }
+
+                const updatedSharedUsers = buildSharedUsersValue([
+                    owner?.username,
+                    ...sharedUsers,
+                    currentUser.username
+                ]);
+
+                db.run(
+                    "UPDATE notes SET shared_user = ? WHERE id = ?",
+                    [updatedSharedUsers, note.id],
+                    function (updateErr) {
+                        if (updateErr) {
+                            return res.status(500).json({ error: updateErr.message });
+                        }
+
+                        res.json({ message: "Shared note added successfully." });
+                    }
+                );
+            });
+        });
     });
 });
 
@@ -466,7 +649,7 @@ app.get("/todos", requireAuth, (req, res) => {
 app.get("/notes-private", requireAuth, (req, res) => {
     const userId = req.session.userId;
 
-    db.all("SELECT * FROM notes WHERE user_id = ? AND private = 1 ORDER BY created_date DESC", [userId], (err, rows) => {
+    db.all("SELECT *, 1 AS is_owner FROM notes WHERE user_id = ? AND private = 1 ORDER BY created_date DESC", [userId], (err, rows) => {
         if (err) {
             return res.status(500).json({ error: err.message });
         }
@@ -483,11 +666,25 @@ app.get("/edit-note/:id", requireAuth, (req, res) => {
         return res.status(400).json({ error: "Invalid note id" });
     }
 
-    db.all("SELECT * FROM notes WHERE id = ? AND user_id = ?", [parsedNoteId, userId], function (err, rows) {
-        if (err) {
-            return res.status(500).json({ error: err.message });
+    db.get("SELECT username FROM users WHERE id = ?", [userId], function (userErr, currentUser) {
+        if (userErr) {
+            return res.status(500).json({ error: "Database error: " + userErr.message });
         }
-        res.json(rows);
+
+        if (!currentUser) {
+            return res.status(404).json({ error: "Current user not found" });
+        }
+
+        db.all(
+            "SELECT * FROM notes WHERE id = ? AND (user_id = ? OR (shared_user IS NOT NULL AND shared_user != '' AND shared_user LIKE ?))",
+            [parsedNoteId, userId, `%${currentUser.username}%`],
+            function (err, rows) {
+                if (err) {
+                    return res.status(500).json({ error: err.message });
+                }
+                res.json(rows);
+            }
+        );
     });
 });
 
@@ -507,12 +704,12 @@ app.post("/edit-note-submit", requireAuth, (req, res) => {
     }
 
     db.run(
-            "UPDATE notes SET title = ?, content = ?, category = ?, color = ?, private = ?, created_date = ? WHERE id = ? AND user_id = ?",
-            [String(title).trim(), String(content || "").trim(), String(category || "").trim(), String(color || "").trim(), isPrivate ? 1 : 0, date, parsedNoteId, userId],
-            function (err) {
-                if (err) {
-                    return res.status(500).json({ error: err.message });
-                }
+        "UPDATE notes SET title = ?, content = ?, category = ?, color = ?, private = ?, created_date = ?, share_code = NULL, shared_user = NULL WHERE id = ? AND user_id = ?",
+        [String(title).trim(), String(content || "").trim(), String(category || "").trim(), String(color || "").trim(), isPrivate ? 1 : 0, date, parsedNoteId, userId],
+        function (err) {
+            if (err) {
+                return res.status(500).json({ error: err.message });
+            }
             res.json({ message: "Note updated successfully", id: req.session.userId });
         }
     );
@@ -520,24 +717,78 @@ app.post("/edit-note-submit", requireAuth, (req, res) => {
 
 app.post("/edit-shared-note-submit", requireAuth, (req, res) => {
     const userId = req.session.userId;
-    const { noteId, title, content, category, color, isPrivate, username } = req.body;
+    const { noteId, title, content, category, color, shareCode, isPrivate } = req.body;
     const date = new Date().toLocaleString();
+    const parsedNoteId = parsePositiveInt(noteId);
+
+    if (!parsedNoteId) {
+        return res.status(400).json({ error: "Invalid note id" });
+    }
+
+    const noteValidationError = validateNoteInput(title, content, category, color);
+    if (noteValidationError) {
+        return res.status(400).json({ error: noteValidationError });
+    }
+
+    const shareCodeValidationError = validateShareCode(shareCode);
+    if (shareCodeValidationError) {
+        return res.status(400).json({ error: shareCodeValidationError });
+    }
+
+    const normalizedShareCode = String(shareCode || "").trim().toUpperCase();
     
-    db.get("SELECT username FROM users WHERE id = ?", [userId], function (err, row) {
-        if (err) {
-            return res.status(500).json({ error: "Database error: " + err.message });
+    db.get("SELECT username FROM users WHERE id = ?", [userId], function (userErr, currentUser) {
+        if (userErr) {
+            return res.status(500).json({ error: "Database error: " + userErr.message });
         }
 
-        const creatorUsername = row.username;
+        if (!currentUser) {
+            return res.status(404).json({ error: "Current user not found" });
+        }
 
-        db.run(
-            "UPDATE notes SET title = ?, content = ?, category = ?, color = ?, private = ?, created_date = ?, shared_user = ? WHERE id = ?",
-            [title, content, category, color, 0, date, creatorUsername + "," + username, noteId],
-            function (err) {
+        db.get(
+            "SELECT * FROM notes WHERE id = ? AND (user_id = ? OR (shared_user IS NOT NULL AND shared_user != '' AND shared_user LIKE ?))",
+            [parsedNoteId, userId, `%${currentUser.username}%`],
+            function (err, note) {
                 if (err) {
-                    return res.status(500).json({ error: err.message });
+                    return res.status(500).json({ error: "Database error: " + err.message });
                 }
-                res.json({ message: "Note updated successfully", id: this.lastID });
+
+                if (!note) {
+                    return res.status(404).json({ error: "Note not found" });
+                }
+
+                const isOwner = note.user_id === userId;
+                if (!isOwner && isPrivate) {
+                    return res.status(403).json({ error: "Only the owner can make a shared note private." });
+                }
+
+                const nextPrivateValue = isOwner && isPrivate ? 1 : 0;
+                const nextShareCode = isOwner && isPrivate ? null : normalizedShareCode;
+                const nextSharedUsers = isOwner && isPrivate ? null : note.shared_user;
+
+                db.run(
+                    "UPDATE notes SET title = ?, content = ?, category = ?, color = ?, private = ?, created_date = ?, share_code = ?, shared_user = ? WHERE id = ?",
+                    [
+                        String(title).trim(),
+                        String(content || "").trim(),
+                        String(category || "").trim(),
+                        String(color || "").trim(),
+                        nextPrivateValue,
+                        date,
+                        nextShareCode,
+                        nextSharedUsers,
+                        parsedNoteId
+                    ],
+                    function (updateErr) {
+                        if (updateErr) {
+                            return res.status(500).json({ error: updateErr.message });
+                        }
+
+                        consumeReservedShareCode(normalizedShareCode);
+                        res.json({ message: "Note updated successfully", id: parsedNoteId });
+                    }
+                );
             }
         );
     });
@@ -640,29 +891,34 @@ app.post("/add-note", requireAuth, writeRateLimiter, (req, res) => {
     );
 });
 
-app.post("/add-shared-note", requireAuth, (req, res) => {
+app.post("/add-shared-note", requireAuth, writeRateLimiter, (req, res) => {
     const userId = req.session.userId;
-    const { title, content, category, color, isPrivate, username } = req.body;
+    const { title, content, category, color, shareCode } = req.body;
     const date = new Date().toLocaleString();
+    const noteValidationError = validateNoteInput(title, content, category, color);
+    if (noteValidationError) {
+        return res.status(400).json({ error: noteValidationError });
+    }
 
-    db.get("SELECT username FROM users WHERE id = ?", [userId], function (err, row) {
-        if (err) {
-            return res.status(500).json({ error: "Database error: " + err.message });
-        }
+    const shareCodeValidationError = validateShareCode(shareCode);
+    if (shareCodeValidationError) {
+        return res.status(400).json({ error: shareCodeValidationError });
+    }
 
-        const creatorUsername = row.username;
+    const normalizedShareCode = String(shareCode || "").trim().toUpperCase();
 
-        db.run(
-            "INSERT INTO notes (user_id, title, content, category, color, private, created_date, shared_user) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-            [userId, title, content, category, color, 0, date, creatorUsername + "," + username],
-            function (err) {
-                if (err) {
-                    return res.status(500).json({ error: err.message });
-                }
-                res.json({ message: "Note added successfully", id: this.lastID });
+    db.run(
+        "INSERT INTO notes (user_id, title, content, category, color, private, created_date, share_code, shared_user) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL)",
+        [userId, String(title).trim(), String(content || "").trim(), String(category || "").trim(), String(color || "").trim(), 0, date, normalizedShareCode],
+        function (err) {
+            if (err) {
+                return res.status(500).json({ error: err.message });
             }
-        );
-    });
+
+            consumeReservedShareCode(normalizedShareCode);
+            res.json({ message: "Shared note created successfully", id: this.lastID, shareCode: normalizedShareCode });
+        }
+    );
 });
 
 app.get("/check-username/:username", requireAuth, (req, res) => {

@@ -17,12 +17,14 @@ const categoriesSelectBox = document.getElementById("category");
 const noteCount = document.getElementById("note-count");
 const favCategory = document.getElementById("fav-category");
 
-const checkboxShare = document.getElementById("checkboxShare");
+const buttonShare = document.getElementById("buttonShare");
 const inputShare = document.getElementById("inputShare");
-const shareUsername = document.getElementById("shareUsername");
+const shareCode = document.getElementById("shareCode");
+const copyShareCodeBtn = document.getElementById("copyShareCodeBtn");
+const shareFeedback = inputShare.querySelector("div:last-child");
 
 let noteSuccessTitle = false;
-let noteSuccessUsername = false;
+let shareEnabled = false;
 
 async function fetchJson(url, options = {}) {
     const response = await fetch(url, options);
@@ -106,37 +108,6 @@ function checkRequired(input) {
         success(title);
         noteSuccessTitle = true;
     }
-
-    if (checkboxShare.checked) {
-        if (shareUsername.value === "") {
-            error(shareUsername, `Username is required!`);
-            noteSuccessUsername = false;
-        } else {
-            success(shareUsername);
-            noteSuccessUsername = true;
-        }
-    }
-}
-
-async function checkUsername(username) {
-    try {
-        const data = await fetchJson(`http://localhost:3000/check-username/${encodeURIComponent(username)}`);
-
-        if (data.self) {
-            alert("You can't share the note with yourself!");
-            return false;
-        }
-
-        if (!data.found) {
-            alert("User cannot be found!");
-            return false;
-        }
-        
-        return true;
-    } catch (err) {
-        console.error("Error fetching user:", err);
-        return false;
-    }
 }
 
 title.addEventListener("input", function () {
@@ -163,9 +134,43 @@ function loadContent() {
 function updatePreviewVisibilityBadge() {
     if (checkbox.checked) {
         previewHidden.innerHTML = `<i class="fa-solid fa-lock"></i> Private`;
+    } else if (shareEnabled) {
+        previewHidden.innerHTML = `<i class="fa-solid fa-share-nodes"></i> Shared`;
     } else {
         previewHidden.innerHTML = `Visible`;
     }
+}
+
+function setShareFeedback(message = "") {
+    shareFeedback.innerText = message;
+    shareFeedback.className = message ? "invalid-feedback d-block" : "";
+}
+
+function resetShareState() {
+    shareEnabled = false;
+    inputShare.style.display = "none";
+    shareCode.value = "";
+    shareCode.classList.remove("is-valid", "is-invalid");
+    setShareFeedback("");
+    copyShareCodeBtn.disabled = true;
+    buttonShare.classList.remove("active");
+    updatePreviewVisibilityBadge();
+}
+
+async function createShareCode() {
+    const data = await fetchJson("http://localhost:3000/generate-share-code", {
+        method: "POST"
+    });
+
+    shareEnabled = true;
+    inputShare.style.display = "block";
+    shareCode.value = data.shareCode;
+    shareCode.classList.add("is-valid");
+    shareCode.classList.remove("is-invalid");
+    setShareFeedback("");
+    copyShareCodeBtn.disabled = false;
+    buttonShare.classList.add("active");
+    updatePreviewVisibilityBadge();
 }
 
 categoriesSelectBox.addEventListener("change", function () {
@@ -208,47 +213,62 @@ function changeColor(selectedColor) {
 
 checkbox.addEventListener("change", function () {
     if (this.checked) {
-        checkboxShare.checked = false;
-        inputShare.style.display = "none";
-        shareUsername.value = "";
-        shareUsername.classList.remove("is-valid", "is-invalid");
-        shareUsername.nextElementSibling.innerText = "";
-        shareUsername.nextElementSibling.className = "";
+        resetShareState();
     }
 
     updatePreviewVisibilityBadge();
 });
 
-checkboxShare.addEventListener("change", function () {
-    if (this.checked) {
+buttonShare.addEventListener("click", async function () {
+    if (checkbox.checked) {
         checkbox.checked = false;
-        inputShare.style.display = "flex";
-    } else {
-        inputShare.style.display = "none";
-        shareUsername.value = "";
-        shareUsername.classList.remove("is-valid", "is-invalid");
-        shareUsername.nextElementSibling.innerText = "";
-        shareUsername.nextElementSibling.className = "";
     }
 
-    updatePreviewVisibilityBadge();
+    if (shareEnabled) {
+        resetShareState();
+        return;
+    }
+
+    try {
+        await createShareCode();
+    } catch (err) {
+        console.error("Error generating share code:", err);
+        alert(err.message);
+    }
+});
+
+copyShareCodeBtn.addEventListener("click", async function () {
+    if (!shareCode.value) {
+        return;
+    }
+
+    try {
+        await navigator.clipboard.writeText(shareCode.value);
+        copyShareCodeBtn.innerHTML = `<i class="fa-solid fa-check"></i>`;
+
+        setTimeout(() => {
+            copyShareCodeBtn.innerHTML = `<i class="fa-regular fa-copy"></i>`;
+        }, 1200);
+    } catch (err) {
+        console.error("Copy error:", err);
+        alert("Share code could not be copied.");
+    }
 });
 
 form.addEventListener("submit", async function(e) {
     e.preventDefault();
     
     checkRequired(title);
-    if (checkboxShare.checked && shareUsername.value !== "") {
-        noteSuccessUsername = await checkUsername(shareUsername.value);
-    } else if (checkboxShare.checked && shareUsername.value == "") {
-        noteSuccessUsername = false;
-    } else {
-        noteSuccessUsername = true;
+
+    if (shareEnabled && !shareCode.value.trim()) {
+        shareCode.classList.add("is-invalid");
+        setShareFeedback("Generate a share code first.");
+        return;
     }
 
-    if (noteSuccessTitle && noteSuccessUsername) {
+    if (noteSuccessTitle) {
         
-        let path = !checkboxShare.checked ? "add-note" : "add-shared-note"; 
+        let path = !shareEnabled ? "add-note" : "add-shared-note";
 
         const noteData = {
             title: title.value,
@@ -258,8 +278,8 @@ form.addEventListener("submit", async function(e) {
             isPrivate: checkbox.checked
         };
 
-        if (checkboxShare.checked) {
-            noteData.username = shareUsername.value;
+        if (shareEnabled) {
+            noteData.shareCode = shareCode.value.trim();
         }
 
         fetchJson(`http://localhost:3000/${path}`, {

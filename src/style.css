@@ -1347,6 +1347,23 @@ button:hover {
     margin: 0;
 }
 
+.editor-share-toggle-btn {
+    border: 1px solid rgba(28, 114, 217, 0.12);
+    cursor: pointer;
+}
+
+.editor-share-toggle-btn.active {
+    background: rgba(31, 111, 235, 0.12);
+    border-color: rgba(31, 111, 235, 0.22);
+    color: #225db6;
+}
+
+.dark-mode .editor-share-toggle-btn.active {
+    background: rgba(116, 192, 252, 0.12);
+    border-color: rgba(116, 192, 252, 0.2);
+    color: #9fd4ff;
+}
+
 .editor-share-row {
     margin-bottom: 18px;
     padding: 14px;
@@ -1362,6 +1379,24 @@ button:hover {
 
 .editor-share-row .editor-label {
     display: block;
+}
+
+.editor-share-controls {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 52px;
+    gap: 10px;
+    align-items: center;
+}
+
+.editor-share-code-input {
+    letter-spacing: 0.18em;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.editor-copy-btn {
+    min-height: 50px;
+    border-radius: 14px;
 }
 
 .editor-actions {
@@ -1395,6 +1430,11 @@ button:hover {
     gap: 0;
 }
 
+.editor-note-preview .note-preview-card__header > div:first-child {
+    flex: 1;
+    min-width: 0;
+}
+
 .editor-note-preview .note-preview-card__title {
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1402,6 +1442,7 @@ button:hover {
 }
 
 .editor-note-preview .note-preview-card__badge {
+    flex: 0 0 auto;
     gap: 8px;
     white-space: nowrap;
     margin-right: 10px;
@@ -1705,6 +1746,119 @@ button:hover {
 
 .home-search input:focus {
     box-shadow: none;
+}
+
+.share-code-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1200;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(10, 16, 24, 0.58);
+    backdrop-filter: blur(6px);
+}
+
+.share-code-modal__card {
+    position: relative;
+    width: min(100%, 460px);
+    padding: 24px;
+    border-radius: 24px;
+    border: 1px solid rgba(19, 30, 48, 0.08);
+    background: rgba(255, 252, 247, 0.96);
+    box-shadow: 0 22px 50px rgba(20, 29, 43, 0.18);
+}
+
+.dark-mode .share-code-modal__card {
+    border-color: rgba(255, 255, 255, 0.08);
+    background: rgba(18, 24, 35, 0.96);
+}
+
+.share-code-modal__close {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 40px;
+    height: 40px;
+    border: 0;
+    border-radius: 999px;
+    background: rgba(17, 24, 35, 0.08);
+    color: #233042;
+}
+
+.dark-mode .share-code-modal__close {
+    background: rgba(255, 255, 255, 0.08);
+    color: #f3f6fb;
+}
+
+.share-code-modal__eyebrow {
+    margin: 0 0 8px;
+    font-family: 'Manrope', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #96731f;
+}
+
+.share-code-modal__title {
+    margin: 0 0 10px;
+    font-family: 'Fraunces', serif;
+    color: #152033;
+}
+
+.dark-mode .share-code-modal__title {
+    color: #f4f7fb;
+}
+
+.share-code-modal__text {
+    margin: 0 0 16px;
+    font-family: 'Manrope', sans-serif;
+    font-size: 0.94rem;
+    line-height: 1.7;
+    color: #617084;
+}
+
+.dark-mode .share-code-modal__text {
+    color: #afbccd;
+}
+
+.share-code-modal__form {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+}
+
+.share-code-modal__input {
+    min-height: 48px;
+    border-radius: 14px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    font-weight: 800;
+}
+
+.share-code-modal__submit {
+    min-width: 88px;
+    min-height: 48px;
+    border-radius: 14px;
+    font-family: 'Manrope', sans-serif;
+    font-weight: 800;
+}
+
+.share-code-modal__status {
+    min-height: 24px;
+    margin: 12px 0 0;
+    font-family: 'Manrope', sans-serif;
+    font-size: 0.9rem;
+}
+
+.share-code-modal__status.success {
+    color: #138a36;
+}
+
+.share-code-modal__status.error {
+    color: #cc3f3f;
 }
 
 .home-table-wrap {

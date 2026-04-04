@@ -18,9 +18,15 @@ const addTodo = document.getElementById("addTodo");
 const welcomePopup = document.getElementById("welcomePopup");
 const welcomePopupContent = document.getElementById("welcomePopupContent");
 
+const addSharedCodeBtn = document.getElementById("addSharedCodeBtn");
 const sharedNotesBtn = document.getElementById("sharedNotesBtn");
 const tableHeader = document.getElementById("tableHeader");
 const createNoteBtn = document.getElementById("createNoteBtn");
+const shareCodeModal = document.getElementById("shareCodeModal");
+const closeShareCodeModal = document.getElementById("closeShareCodeModal");
+const submitSharedCodeBtn = document.getElementById("submitSharedCodeBtn");
+const sharedCodeInput = document.getElementById("sharedCodeInput");
+const shareCodeStatus = document.getElementById("shareCodeStatus");
 
 const categoryTh = document.getElementById("category");
 
@@ -59,6 +65,31 @@ if (localStorage.getItem("theme") === "dark") {
 
 updateHiddenNotesButton();
 
+function syncSharedNotesView() {
+    tableHeader.innerText = sharedNotesShow ? "Shared Notes" : "My Notes";
+    createNoteBtn.innerText = sharedNotesShow ? "Create a Shared Note" : "Create Note";
+
+    if (sharedNotesShow) {
+        createNoteBtn.classList.add("share");
+    } else {
+        createNoteBtn.classList.remove("share");
+    }
+}
+
+function openShareCodeModal() {
+    shareCodeModal.style.display = "flex";
+    shareCodeStatus.textContent = "";
+    shareCodeStatus.className = "share-code-modal__status";
+    sharedCodeInput.value = "";
+    setTimeout(() => sharedCodeInput.focus(), 0);
+}
+
+function closeShareCodeModalPopup() {
+    shareCodeModal.style.display = "none";
+    shareCodeStatus.textContent = "";
+    shareCodeStatus.className = "share-code-modal__status";
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const savedUserData = JSON.parse(localStorage.getItem("userData"));
     const username = savedUserData?.username || "there";
@@ -86,24 +117,46 @@ document.addEventListener('DOMContentLoaded', () => {
 
 sharedNotesBtn.addEventListener("click", function () {
     sharedNotesShow = sharedNotesShow ? false : true;
-    tableHeader.innerText = sharedNotesShow ? "Shared Notes" : "My Notes";
-    createNoteBtn.innerText = sharedNotesShow ? "Create a Shared Note" : "Create Note";
-    
-    if (createNoteBtn.innerText == "Create a Shared Note") {
-        createNoteBtn.classList.add("share");
-    } else {
-        createNoteBtn.classList.remove("share");
-    }
-
+    syncSharedNotesView();
     renderNotes();
+});
+
+addSharedCodeBtn.addEventListener("click", openShareCodeModal);
+closeShareCodeModal.addEventListener("click", closeShareCodeModalPopup);
+submitSharedCodeBtn.addEventListener("click", submitSharedCode);
+sharedCodeInput.addEventListener("input", function () {
+    this.value = this.value.toUpperCase().replace(/[^A-Z2-9]/g, "").slice(0, 10);
+});
+sharedCodeInput.addEventListener("keydown", function (event) {
+    if (event.key === "Enter") {
+        event.preventDefault();
+        submitSharedCode();
+    }
 });
 
 document.getElementById("searchInput").addEventListener("input", function () {
     const input = this.value.toLowerCase();
 
-    const filteredNotes = notesData.filter(note => 
-        note.title.toLowerCase().includes(input)
-    );
+    if (input === "") {
+        displayedNotes = [...notesData];
+        drawNotes(displayedNotes);
+        return;
+    }
+
+    const filteredNotes = notesData
+        .filter(note => note.title.toLowerCase().includes(input))
+        .sort((a, b) => {
+            const aTitle = a.title.toLowerCase();
+            const bTitle = b.title.toLowerCase();
+
+            const aStartsWith = aTitle.startsWith(input);
+            const bStartsWith = bTitle.startsWith(input);
+
+            if (aStartsWith && !bStartsWith) return -1;
+            if (!aStartsWith && bStartsWith) return 1;
+
+            return aTitle.localeCompare(bTitle);
+        });
 
     displayedNotes = filteredNotes;
     drawNotes(displayedNotes);
@@ -127,6 +180,39 @@ async function fetchJson(url, options = {}) {
     }
 
     return data;
+}
+
+async function submitSharedCode() {
+    const enteredCode = sharedCodeInput.value.trim().toUpperCase();
+
+    if (!enteredCode) {
+        shareCodeStatus.textContent = "Please enter a share code.";
+        shareCodeStatus.className = "share-code-modal__status error";
+        return;
+    }
+
+    try {
+        const data = await fetchJson("http://localhost:3000/accept-share-code", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ shareCode: enteredCode })
+        });
+
+        shareCodeStatus.textContent = data.message || "Shared note added successfully.";
+        shareCodeStatus.className = "share-code-modal__status success";
+        sharedNotesShow = true;
+        syncSharedNotesView();
+        renderNotes();
+
+        setTimeout(() => {
+            closeShareCodeModalPopup();
+        }, 700);
+    } catch (error) {
+        shareCodeStatus.textContent = error.message;
+        shareCodeStatus.className = "share-code-modal__status error";
+    }
 }
 
 function renderNotes() {
@@ -172,6 +258,12 @@ function drawNotes(notes) {
         notes.slice(index, 6 * currentPage).forEach(item => {
             const row = document.createElement("tr");
             const noteColor = getNoteColor(item.color);
+            const canDelete = Number(item.is_owner) === 1;
+            const deleteButtonHtml = canDelete ? `
+                        <button type="button" class="btn btn-danger btn-sm home-table-action deleteNoteBtn" data-id="${item.id}">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+            ` : "";
             if (!sharedNotesShow) {
                 categoryTh.innerHTML = `<i class="fa-solid fa-layer-group" style="color: #74C0FC;"></i> Category`;
                 row.innerHTML = `
@@ -193,14 +285,12 @@ function drawNotes(notes) {
                         <button type="button" class="btn btn-success btn-sm home-table-action editNoteBtn" data-id="${item.id}">
                             <i class="fa-solid fa-pen"></i>
                         </button>
-                        <button type="button" class="btn btn-danger btn-sm home-table-action deleteNoteBtn" data-id="${item.id}">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
+                        ${deleteButtonHtml}
                         </div>
                     </td>
                 `;
             } else {
-                categoryTh.innerHTML = `<i class="fa-solid fa-person" style="color: #74C0FC;"></i> Users`;
+                categoryTh.innerHTML = `<i class="fa-solid fa-link" style="color: #74C0FC;"></i> Share Code`;
                 row.innerHTML = `
                     <td class="home-note-title-cell">
                         <span class="home-note-title-wrap">
@@ -209,7 +299,7 @@ function drawNotes(notes) {
                         </span>
                     </td>
                     <td>
-                        <span class="home-note-tag home-note-tag--shared">${item.shared_user.split(",")[0]} & ${item.shared_user.split(",")[1]}</span>
+                        <span class="home-note-tag home-note-tag--shared">${item.share_code || "No code"}</span>
                     </td>
                     <td class="home-note-date">${item.created_date}</td>
                     <td>
@@ -220,26 +310,26 @@ function drawNotes(notes) {
                         <button type="button" class="btn btn-success btn-sm home-table-action editNoteBtn" data-id="${item.id}">
                             <i class="fa-solid fa-pen"></i>
                         </button>
-                        <button type="button" class="btn btn-danger btn-sm home-table-action deleteNoteBtn" data-id="${item.id}">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
+                        ${deleteButtonHtml}
                         </div>
                     </td>
                 `;
             }
 
             const deleteNoteBtn = row.querySelector(".deleteNoteBtn");
-            deleteNoteBtn.addEventListener("click", function() {
-                const confirmation = window.confirm("Are you sure you want to delete this note?");
-                if (confirmation) {
-                    fetchJson(`http://localhost:3000/delete-note/${item.id}`, { method: "DELETE" })
-                        .then(() => {
-                            alert("Note deleted.");
-                            renderNotes();
-                        })
-                        .catch(err => console.error("Error:", err));
-                }
-            });
+            if (deleteNoteBtn) {
+                deleteNoteBtn.addEventListener("click", function() {
+                    const confirmation = window.confirm("Are you sure you want to delete this note?");
+                    if (confirmation) {
+                        fetchJson(`http://localhost:3000/delete-note/${item.id}`, { method: "DELETE" })
+                            .then(() => {
+                                alert("Note deleted.");
+                                renderNotes();
+                            })
+                            .catch(err => console.error("Error:", err));
+                    }
+                });
+            }
 
             const editNoteBtn = row.querySelector(".editNoteBtn");
             editNoteBtn.addEventListener("click", function() {
@@ -310,6 +400,9 @@ function showNoteModal(id) {
     const sharedUsers = note.shared_user
         ? note.shared_user.split(",").filter(Boolean).join(" / ")
         : "";
+    const visibilityBadge = note.private
+        ? "Private"
+        : (note.share_code || sharedUsers ? "Shared" : "Visible");
     
     document.getElementById("noteContent").innerHTML = `
         <article class="note-preview-card home-note-preview-card" style="--preview-accent:${noteColor}; background-color:${noteColor};">
@@ -320,7 +413,7 @@ function showNoteModal(id) {
                         <p class="note-preview-card__eyebrow">Note Preview</p>
                         <h2 class="note-preview-card__title">${note.title}</h2>
                     </div>
-                    <span class="note-preview-card__badge">${note.private ? "Private" : "Visible"}</span>
+                    <span class="note-preview-card__badge">${visibilityBadge}</span>
                 </div>
 
                 <div class="note-preview-card__meta">
@@ -562,6 +655,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const viewBtn = e.target.closest(".viewNoteBtn");
         if (viewBtn) {
             showNoteModal(viewBtn.getAttribute("data-id"));
+        }
+    });
+    window.addEventListener("click", function (event) {
+        if (event.target === shareCodeModal) {
+            closeShareCodeModalPopup();
         }
     });
 });

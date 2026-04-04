@@ -70,16 +70,21 @@
                                 <input type="checkbox" class="form-check-input" id="checkbox">
                                 <span>Private note</span>
                             </label>
-                            <label class="editor-toggle">
-                                <input type="checkbox" class="form-check-input" id="checkboxShare">
-                                <span>Share with someone</span>
-                            </label>
+                            <button type="button" class="editor-toggle editor-share-toggle-btn" id="buttonShare">
+                                <i class="fa-solid fa-share-nodes"></i>
+                                <span>Share with link</span>
+                            </button>
                         </div>
 
                         <div class="form-group editor-share-row" id="inputShare" style="display: none;">
-                            <label for="shareUsername" class="editor-label">Share with username</label>
-                            <p class="editor-share-row__hint">Enter the exact username you want to share this note with.</p>
-                            <input type="text" class="note-control editor-control" id="shareUsername" maxlength="50" placeholder="Username">
+                            <label for="shareCode" class="editor-label">Share code</label>
+                            <p class="editor-share-row__hint">Generate a unique code now. You will use this code in the next sharing step.</p>
+                            <div class="editor-share-controls">
+                                <input type="text" class="note-control editor-control editor-share-code-input" id="shareCode" readonly placeholder="Press the share button to generate a code">
+                                <button type="button" class="btn btn-outline-secondary editor-copy-btn" id="copyShareCodeBtn" disabled>
+                                    <i class="fa-regular fa-copy"></i>
+                                </button>
+                            </div>
                             <div></div>
                         </div>
 
