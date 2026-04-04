@@ -1260,6 +1260,44 @@ button:hover {
     color: #344055;
 }
 
+.editor-label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.editor-label-row .editor-label {
+    margin-bottom: 0;
+}
+
+.editor-ai-btn {
+    min-height: 38px;
+    border-radius: 12px;
+    font-family: 'Manrope', sans-serif;
+    font-size: 0.84rem;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.editor-ai-result {
+    margin-top: -2px;
+}
+
+.editor-ai-result__list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.editor-ai-suggestion-btn {
+    border-radius: 999px;
+    font-family: 'Manrope', sans-serif;
+    font-weight: 700;
+}
+
+
 .dark-mode .editor-label {
     color: #ccd6e3;
 }

@@ -1,8 +1,12 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express from 'express';
 import sqlite3 from 'sqlite3';
 import cors from 'cors';
 import session from 'express-session';
 import bcrypt from 'bcrypt';
+import OpenAI from 'openai';
 import crypto from 'crypto';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -17,6 +21,14 @@ const dbPath = path.join(__dirname, "notes.db");
 const isProduction = process.env.NODE_ENV === "production";
 const sessionSecret = process.env.SESSION_SECRET || "change-this-in-production";
 const clientOrigin = process.env.CLIENT_ORIGIN || `http://localhost:${port}`;
+
+const openaiApiKey = process.env.OPENAI_API_KEY;
+const openaiClient = openaiApiKey ? new OpenAI({ apiKey: openaiApiKey }) : null;
+const aiModel = "gpt-5-nano";
+
+const aiAttempts = new Map();
+const aiWindowMs = 60 * 1000;
+const aiMaxAttempts = 2;
 
 const authAttempts = new Map();
 const authWindowMs = 15 * 60 * 1000;
@@ -122,6 +134,42 @@ function writeRateLimiter(req, res, next) {
     next();
 }
 
+function aiRateLimiter(req, res, next) {
+    const now = Date.now();
+    cleanupRateLimitStore(aiAttempts, now, aiWindowMs);
+
+    const identifier = `${getClientIp(req)}:${req.session?.userId || "guest"}:${req.path}`;
+    const current = aiAttempts.get(identifier);
+
+    if (!current) {
+        aiAttempts.set(identifier, {
+            count: 1,
+            firstRequestAt: now
+        });
+        return next();
+    }
+
+    if (now - current.firstRequestAt > aiWindowMs) {
+        aiAttempts.set(identifier, {
+            count: 1,
+            firstRequestAt: now
+        });
+        return next();
+    }
+
+    current.count += 1;
+
+    if (current.count > aiMaxAttempts) {
+        const retryAfterSeconds = Math.ceil((aiWindowMs - (now - current.firstRequestAt)) / 1000);
+        res.setHeader("Retry-After", retryAfterSeconds);
+        return res.status(429).json({
+            error: "Too many AI requests. Please try again shortly."
+        });
+    }
+
+    next();
+}
+
 function clearAuthRateLimit(req) {
     const identifier = `${getClientIp(req)}:${(req.body?.email || "").toLowerCase()}:${(req.body?.username || "").toLowerCase()}`;
     authAttempts.delete(identifier);
@@ -200,6 +248,64 @@ function validateNoteInput(title, content, category, color) {
     }
 
     return null;
+}
+
+function validateTitleSuggestionInput(title, content) {
+    const normalizedTitle = String(title || "").trim();
+    const normalizedContent = String(content || "").trim();
+
+    if (!normalizedTitle && !normalizedContent) {
+        return "Please provide a title draft or note content.";
+    }
+
+    if (normalizedTitle.length > 50) {
+        return "Title draft is too long.";
+    }
+
+    if (normalizedContent.length > 5000) {
+        return "Content is too long.";
+    }
+
+    return null;
+}
+
+function logAiUsage({
+    userId,
+    action,
+    model,
+    inputTokens = 0,
+    outputTokens = 0,
+    totalTokens = 0,
+    success = 1,
+    errorMessage = null
+}) {
+    db.run(
+        `INSERT INTO ai_logs (
+            user_id,
+            action,
+            model,
+            input_tokens,
+            output_tokens,
+            total_tokens,
+            success,
+            error_message
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+            userId,
+            action,
+            model,
+            inputTokens,
+            outputTokens,
+            totalTokens,
+            success,
+            errorMessage
+        ],
+        function (err) {
+            if (err) {
+                console.error("AI log insert error:", err.message);
+            }
+        }
+    );
 }
 
 function validateCategoryName(name) {
@@ -351,6 +457,21 @@ db.run(`
         user_id INTEGER,
         title TEXT NOT NULL,
         isDone BOOLEAN,
+        created_date TEXT DEFAULT (datetime('now'))
+    )    
+`);
+
+db.run(`
+    CREATE TABLE IF NOT EXISTS ai_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
+        action TEXT NOT NULL,
+        model TEXT NOT NULL,
+        input_tokens INTEGER DEFAULT 0,
+        output_tokens INTEGER DEFAULT 0,
+        total_tokens INTEGER DEFAULT 0,
+        success INTEGER DEFAULT 1,
+        error_message TEXT,
         created_date TEXT DEFAULT (datetime('now'))
     )    
 `);
@@ -527,6 +648,100 @@ app.post("/generate-share-code", requireAuth, writeRateLimiter, (req, res) => {
 
         res.json({ shareCode });
     });
+});
+
+app.post("/ai/suggest-title", requireAuth, aiRateLimiter, async (req, res) => {
+    if (!openaiClient) {
+        return res.status(500).json({ error: "OPENAI_API_KEY is not configured" });
+    }
+
+    const title = String(req.body?.title || "").trim();
+    const content = String(req.body?.content || "").trim();
+
+    const validationError = validateTitleSuggestionInput(title, content);
+    if (validationError) {
+        return res.status(400).json({ error: validationError });
+    }
+
+    try {
+        const response = await openaiClient.responses.create({
+            model: aiModel,
+            input: [
+                {
+                    role: "system",
+                    content: [
+                        {
+                            type: "input_text",
+                            text: "You suggest concise, useful note titles. Return exactly 3 title suggestions as plain lines, without numbering, markdown, or extra commentary."
+                        }
+                    ]
+                },
+                {
+                    role: "user",
+                    content: [
+                        {
+                            type: "input_text",
+                            text: `Draft title: ${title || "(empty)"}\n\nNote content:\n${content || "(empty)"}`
+                        }
+                    ]
+                }
+            ]
+        });
+
+        const usage = response.usage || {};
+        const inputTokens = usage.input_tokens || 0;
+        const outputTokens = usage.output_tokens || 0;
+        const totalTokens = usage.total_tokens || 0;
+        const rawOutput = String(response.output_text || "").trim();
+        const suggestions = rawOutput
+            .split("\n")
+            .map((line) => line.trim())
+            .filter(Boolean)
+            .slice(0, 3);
+
+        if (suggestions.length === 0) {
+            logAiUsage({
+                userId: req.session.userId,
+                action: "suggest-title",
+                model: aiModel,
+                inputTokens,
+                outputTokens,
+                totalTokens,
+                success: 0,
+                errorMessage: "No title suggestions were generated."
+            });
+
+            return res.status(500).json({ error: "No title suggestions were generated." });
+        }
+
+        logAiUsage({
+            userId: req.session.userId,
+            action: "suggest-title",
+            model: aiModel,
+            inputTokens,
+            outputTokens,
+            totalTokens,
+            success: 1,
+            errorMessage: null
+        });
+
+        res.json({ suggestions });
+    } catch (error) {
+        console.error("AI title suggestion error:", error);
+
+        logAiUsage({
+            userId: req.session.userId,
+            action: "suggest-title",
+            model: aiModel,
+            inputTokens: 0,
+            outputTokens: 0,
+            totalTokens: 0,
+            success: 0,
+            errorMessage: error.message || "Unknown AI error"
+        });
+
+        res.status(500).json({ error: "Failed to generate title suggestions." });
+    }
 });
 
 app.get("/notes", requireAuth, (req, res) => {

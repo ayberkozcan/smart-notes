@@ -12,6 +12,10 @@ const previewContent = document.getElementById("preview-content");
 const previewCategory = document.getElementById("preview-category");
 const previewHidden = document.getElementById("preview-hidden");
 
+const suggestTitleBtn = document.getElementById("suggestTitleBtn");
+const titleSuggestionsBox = document.getElementById("titleSuggestionsBox");
+const titleSuggestionsList = document.getElementById("titleSuggestionsList");
+
 const urlParams = new URLSearchParams(window.location.search);
 const noteId = urlParams.get("id");
 
@@ -47,6 +51,27 @@ async function fetchJson(url, options = {}) {
     }
 
     return data;
+}
+
+function renderTitleSuggestions(suggestions) {
+    titleSuggestionsList.innerHTML = "";
+
+    suggestions.forEach((suggestion) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "btn btn-outline-secondary editor-ai-suggestion-btn";
+        button.textContent = suggestion;
+
+        button.addEventListener("click", () => {
+            title.value = suggestion;
+            previewTitle.innerHTML = suggestion;
+            titleSuggestionsBox.style.display = "none";
+        });
+
+        titleSuggestionsList.appendChild(button);
+    });
+
+    titleSuggestionsBox.style.display = suggestions.length > 0 ? "block" : "none";
 }
 
 function renderCategories() {
@@ -148,6 +173,32 @@ function checkRequired(input) {
 
 title.addEventListener("input", function () {
     previewTitle.innerHTML = title.value.trim() === "" ? "..." : title.value;
+});
+
+suggestTitleBtn.addEventListener("click", async function () {
+    try {
+        suggestTitleBtn.disabled = true;
+        suggestTitleBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Thinking`;
+
+        const data = await fetchJson("http://localhost:3000/ai/suggest-title", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                title: title.value.trim(),
+                content: content.value.trim()
+            })
+        });
+
+        renderTitleSuggestions(data.suggestions || []);
+    } catch (error) {
+        console.error("AI title suggestion error:", error);
+        alert(error.message);
+    } finally {
+        suggestTitleBtn.disabled = false;
+        suggestTitleBtn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> Suggest Title`;
+    }
 });
 
 content.addEventListener("input", function () {
