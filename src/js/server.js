@@ -686,7 +686,7 @@ app.post("/ai/suggest-title", requireAuth, aiRateLimiter, async (req, res) => {
                     content: [
                         {
                             type: "input_text",
-                            text: "You suggest concise, useful note titles. Return exactly 3 title suggestions as plain lines, without numbering, markdown, or extra commentary."
+                            text: "You suggest concise and relevant note titles. Preserve the user's original intent and topic. If the draft title has spelling or grammar mistakes, correct them. Return exactly 3 suggestions: the first should be the closest corrected version of the draft title, and the next two should be natural, slightly more polished or creative variations that still keep the same meaning. Only use the note content to clarify ambiguity when necessary, and never change the topic. Return plain lines only, without numbering, markdown, quotation marks, or extra commentary."
                         }
                     ]
                 },

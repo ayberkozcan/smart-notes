@@ -42,11 +42,11 @@
                             </div>
                             <input type="text" class="note-control editor-control" id="title" maxlength="50">
                             <div></div>
-                        </div>
 
-                        <div class="form-group editor-ai-result" id="titleSuggestionsBox" style="display: none;">
-                            <label class="editor-label">Title Suggestions</label>
-                            <div id="titleSuggestionsList" class="editor-ai-result__list"></div>
+                            <div class="editor-ai-result editor-ai-result--inline" id="titleSuggestionsBox" style="display: none;">
+                                <p class="editor-ai-result__label">Title Suggestions</p>
+                                <div id="titleSuggestionsList" class="editor-ai-result__list"></div>
+                            </div>
                         </div>
                         
                         <div class="form-group">
@@ -73,12 +73,21 @@
                             <div class="col-sm-6 form-group">
                                 <label for="color" class="editor-label">Color</label>
                                 <select class="note-control editor-control" id="color">
-                                    <option value="Gray" class="option-gray" selected>Gray</option>
-                                    <option value="Yellow" class="option-yellow">Yellow</option>
-                                    <option value="Blue" class="option-blue">Blue</option>
-                                    <option value="Red" class="option-red">Red</option>
-                                    <option value="Pink" class="option-pink">Pink</option>
+                                    <option value="Ivory" class="option-ivory" selected>Ivory</option>
+                                    <option value="Sage" class="option-sage">Sage</option>
+                                    <option value="Sky" class="option-sky">Sky</option>
+                                    <option value="Coral" class="option-coral">Coral</option>
+                                    <option value="Mauve" class="option-mauve">Mauve</option>
+                                    <option value="Slate" class="option-slate">Slate</option>
                                 </select>
+                                <div class="editor-color-palette" id="colorPalette">
+                                    <button type="button" class="editor-color-swatch is-active" data-color="Ivory" aria-label="Ivory"></button>
+                                    <button type="button" class="editor-color-swatch" data-color="Sage" aria-label="Sage"></button>
+                                    <button type="button" class="editor-color-swatch" data-color="Sky" aria-label="Sky"></button>
+                                    <button type="button" class="editor-color-swatch" data-color="Coral" aria-label="Coral"></button>
+                                    <button type="button" class="editor-color-swatch" data-color="Mauve" aria-label="Mauve"></button>
+                                    <button type="button" class="editor-color-swatch" data-color="Slate" aria-label="Slate"></button>
+                                </div>
                             </div>
                         </div>
 

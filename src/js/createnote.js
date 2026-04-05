@@ -16,12 +16,19 @@ const suggestTitleBtn = document.getElementById("suggestTitleBtn");
 const titleSuggestionsBox = document.getElementById("titleSuggestionsBox");
 const titleSuggestionsList = document.getElementById("titleSuggestionsList");
 const suggestContentBtn = document.getElementById("suggestContentBtn");
+const colorPalette = document.getElementById("colorPalette");
 
 function updateSuggestContentButton() {
     const hasContent = content.value.trim().length > 0;
-     suggestContentBtn.innerHTML = hasContent
+    suggestContentBtn.innerHTML = hasContent
         ? `<i class="fa-solid fa-wand-magic-sparkles"></i> Improve Content`
         : `<i class="fa-solid fa-wand-magic-sparkles"></i> Suggest Content`;
+}
+
+function syncColorPalette(selectedColor) {
+    colorPalette.querySelectorAll(".editor-color-swatch").forEach((swatch) => {
+        swatch.classList.toggle("is-active", swatch.dataset.color === selectedColor);
+    });
 }
 
 const categoriesSelectBox = document.getElementById("category");
@@ -120,6 +127,7 @@ loadContent();
 updateSuggestContentButton();
 updatePreviewVisibilityBadge();
 changeColor(color.options[color.selectedIndex].text);
+syncColorPalette(color.options[color.selectedIndex].text);
 
 function error(input, message) {
     input.classList.add("is-invalid");
@@ -275,29 +283,44 @@ categoriesSelectBox.addEventListener("change", function () {
 color.addEventListener("change", function () {
     let selectedColor = color.options[color.selectedIndex].text;
     changeColor(selectedColor);
+    syncColorPalette(selectedColor);
+});
+
+colorPalette.addEventListener("click", function (event) {
+    const swatch = event.target.closest(".editor-color-swatch");
+    if (!swatch) {
+        return;
+    }
+
+    color.value = swatch.dataset.color;
+    changeColor(swatch.dataset.color);
+    syncColorPalette(swatch.dataset.color);
 });
 
 function changeColor(selectedColor) {
     let colorValue = "#ffffff";
 
     switch (selectedColor) {
-        case "Gray":
-            colorValue = "rgba(192, 192, 192, 0.822)";
+        case "Ivory":
+            colorValue = "#f6f1e8";
             break;
-        case "Yellow":
-            colorValue = "#faffcc";
+        case "Sage":
+            colorValue = "#dbe8d2";
             break;
-        case "Blue":
-            colorValue = "#a1afff";
+        case "Sky":
+            colorValue = "#d7e9f7";
             break;
-        case "Red":
-            colorValue = "#ffb3b3";
+        case "Coral":
+            colorValue = "#f6d2c9";
             break;
-        case "Pink":
-            colorValue = "#ffb0ff";
+        case "Mauve":
+            colorValue = "#e7d9ee";
+            break;
+        case "Slate":
+            colorValue = "#d9dee7";
             break;
         default:
-            colorValue = "#ffffff";
+            colorValue = "#f6f1e8";
             break;
     }
 

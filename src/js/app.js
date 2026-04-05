@@ -258,6 +258,7 @@ function drawNotes(notes) {
         notes.slice(index, 6 * currentPage).forEach(item => {
             const row = document.createElement("tr");
             const noteColor = getNoteColor(item.color);
+            const formattedDate = formatNoteDate(item.created_date);
             const canDelete = Number(item.is_owner) === 1;
             const deleteButtonHtml = canDelete ? `
                         <button type="button" class="btn btn-danger btn-sm home-table-action deleteNoteBtn" data-id="${item.id}">
@@ -276,7 +277,7 @@ function drawNotes(notes) {
                     <td>
                         <span class="home-note-tag">${item.category}</span>
                     </td>
-                    <td class="home-note-date">${item.created_date}</td>
+                    <td class="home-note-date">${formattedDate}</td>
                     <td>
                         <div class="home-table-actions">
                         <button type="button" class="btn btn-info btn-sm home-table-action viewNoteBtn" data-id="${item.id}">
@@ -301,7 +302,7 @@ function drawNotes(notes) {
                     <td>
                         <span class="home-note-tag home-note-tag--shared">${item.share_code || "No code"}</span>
                     </td>
-                    <td class="home-note-date">${item.created_date}</td>
+                    <td class="home-note-date">${formattedDate}</td>
                     <td>
                         <div class="home-table-actions">
                         <button type="button" class="btn btn-info btn-sm home-table-action viewNoteBtn" data-id="${item.id}">
@@ -360,14 +361,31 @@ function drawNotes(notes) {
 
 function getNoteColor(colorName) {
     const colors = {
-        Gray: "rgba(192, 192, 192, 0.822)",
-        Yellow: "#faffcc",
-        Blue: "#a1afff",
-        Red: "#ffb3b3",
-        Pink: "#ffb0ff"
+        Ivory: "#f6f1e8",
+        Sage: "#dbe8d2",
+        Sky: "#d7e9f7",
+        Coral: "#f6d2c9",
+        Mauve: "#e7d9ee",
+        Slate: "#d9dee7"
     };
 
-    return colors[colorName] || "#ffffff";
+    return colors[colorName] || "#f6f1e8";
+}
+
+function formatNoteDate(dateValue) {
+    const parsedDate = new Date(dateValue);
+
+    if (!Number.isNaN(parsedDate.getTime())) {
+        return new Intl.DateTimeFormat("en-GB", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit"
+        }).format(parsedDate);
+    }
+
+    return String(dateValue || "").replace(/:\d{2}(?=\s|$)/, "");
 }
 
 function getNodeById(id) {
@@ -400,6 +418,7 @@ function showNoteModal(id) {
     const sharedUsers = note.shared_user
         ? note.shared_user.split(",").filter(Boolean).join(" / ")
         : "";
+    const formattedDate = formatNoteDate(note.created_date);
     const visibilityBadge = note.private
         ? "Private"
         : (note.share_code || sharedUsers ? "Shared" : "Visible");
@@ -423,7 +442,7 @@ function showNoteModal(id) {
                     </span>
                     <span class="note-preview-card__meta-item">
                         <i class="fa-solid fa-calendar-days"></i>
-                        ${note.created_date}
+                        ${formattedDate}
                     </span>
                     ${sharedUsers ? `
                     <span class="note-preview-card__meta-item">
