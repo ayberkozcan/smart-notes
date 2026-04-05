@@ -1379,7 +1379,9 @@ app.post("/edit-category", requireAuth, (req, res) => {
             return res.status(400).json({ error: "Invalid category index" });
         }
 
-        categories[parsedCategoryIndex] = String(newName).trim();
+        const oldCategoryName = String(categories[parsedCategoryIndex] || "").trim();
+        const normalizedNewName = String(newName).trim();
+        categories[parsedCategoryIndex] = normalizedNewName;
 
         db.run(
             "UPDATE users SET categories = ? WHERE id = ?",
@@ -1388,7 +1390,18 @@ app.post("/edit-category", requireAuth, (req, res) => {
                 if (err) {
                     return res.status(500).json({ error: err.message });
                 }
-                res.json({ message: "Category deleted successfully", id: userId });
+
+                db.run(
+                    "UPDATE notes SET category = ? WHERE user_id = ? AND category = ?",
+                    [normalizedNewName, userId, oldCategoryName],
+                    function (noteErr) {
+                        if (noteErr) {
+                            return res.status(500).json({ error: noteErr.message });
+                        }
+
+                        res.json({ message: "Category updated successfully", id: userId });
+                    }
+                );
             }
         );
     });
