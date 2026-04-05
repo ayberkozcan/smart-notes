@@ -357,6 +357,13 @@ function drawNotes(notes) {
         tfoot.appendChild(row);
         table.appendChild(tfoot);
     }
+
+    const totalNotes = displayedNotes.length;
+    const notesPerPage = 6;
+    const maxPage = Math.ceil(totalNotes / notesPerPage);
+    
+    previousPageBtn.disabled = currentPage <= 1;
+    nextPageBtn.disabled = currentPage >= maxPage;
 }
 
 function getNoteColor(colorName) {
@@ -635,17 +642,23 @@ document.getElementById("addTodo").addEventListener("click", function (e) {
 });
 
 previousPageBtn.addEventListener("click", function (e) {
-    currentPage = currentPage == 1 ? 1 : currentPage -= 1; 
-    pageNumber.innerHTML = currentPage;
-    drawNotes(displayedNotes);
+    if (currentPage > 1) {
+        currentPage--;
+        pageNumber.innerHTML = currentPage;
+        drawNotes(displayedNotes);
+    }
 });
 
 nextPageBtn.addEventListener("click", function (e) {
-    if (notesData.length / (9 * currentPage) > 1) { 
+    const totalNotes = displayedNotes.length;
+    const notesPerPage = 6;
+    const maxPage = Math.ceil(totalNotes / notesPerPage);
+    
+    if (currentPage < maxPage) {
         currentPage++;
+        pageNumber.innerHTML = currentPage;
+        drawNotes(displayedNotes);
     }
-    pageNumber.innerHTML = currentPage;
-    drawNotes(displayedNotes);
 });
 
 settingsBtn.addEventListener("click", function(e) {
