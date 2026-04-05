@@ -160,7 +160,11 @@ function getNote() {
                 window.location.href = "homepage.html";
             }
         })
-        .catch(error => console.error("Error: ", error));
+        .catch(error => {
+            console.error("Error: ", error);
+            alert(error.message || "You do not have permission to view this note.");
+            window.location.href = "homepage.html";
+        });
 }
 
 getNote();

@@ -10,13 +10,27 @@ import OpenAI from 'openai';
 import crypto from 'crypto';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import {
+    buildSharedUsersValue,
+    normalizeAuthInput,
+    parsePositiveInt,
+    parseSharedUsers,
+    validateAuthInput,
+    validateCategoryName,
+    validateContentSuggestionInput,
+    validateNoteInput,
+    validateShareCode,
+    validateTextField,
+    validateTitleSuggestionInput
+} from './backend/validation.js';
+import { errorHandler, notFoundHandler } from './backend/http.js';
 
 const app = express();
 const port = 3000;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectSrcDir = path.resolve(__dirname, "..");
-const dbPath = path.join(__dirname, "notes.db");
+const dbPath = process.env.DB_PATH || path.join(__dirname, "notes.db");
 
 const isProduction = process.env.NODE_ENV === "production";
 const sessionSecret = process.env.SESSION_SECRET || "change-this-in-production";
@@ -175,114 +189,6 @@ function clearAuthRateLimit(req) {
     authAttempts.delete(identifier);
 }
 
-function normalizeAuthInput(value) {
-    return String(value || "").trim();
-}
-
-function validateAuthInput(email, username, password) {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    if (!email || !username || !password) {
-        return "Email, username and password are required.";
-    }
-
-    if (!emailRegex.test(email)) {
-        return "Invalid email format.";
-    }
-
-    if (username.length < 5 || username.length > 20) {
-        return "Username must be between 5 and 20 characters.";
-    }
-
-    if (password.length < 8 || password.length > 64) {
-        return "Password must be between 8 and 64 characters.";
-    }
-
-    return null;
-}
-
-function parsePositiveInt(value) {
-    const parsed = Number.parseInt(value, 10);
-
-    if (!Number.isInteger(parsed) || parsed <= 0) {
-        return null;
-    }
-
-    return parsed;
-}
-
-function validateTextField(value, fieldName, minLength, maxLength) {
-    const normalizedValue = String(value || "").trim();
-
-    if (normalizedValue.length < minLength || normalizedValue.length > maxLength) {
-        return `${fieldName} must be between ${minLength} and ${maxLength} characters.`;
-    }
-
-    return null;
-}
-
-function validateNoteInput(title, content, category, color) {
-    const normalizedTitle = String(title || "").trim();
-    const normalizedContent = String(content || "").trim();
-    const normalizedCategory = String(category || "").trim();
-    const normalizedColor = String(color || "").trim();
-
-    if (!normalizedTitle) {
-        return "Title is required.";
-    }
-
-    if (normalizedTitle.length > 100) {
-        return "Title cannot be longer than 100 characters.";
-    }
-
-    if (normalizedContent.length > 5000) {
-        return "Content cannot be longer than 5000 characters.";
-    }
-
-    if (normalizedCategory.length > 30) {
-        return "Category cannot be longer than 30 characters.";
-    }
-
-    if (normalizedColor.length > 20) {
-        return "Color value is too long.";
-    }
-
-    return null;
-}
-
-function validateTitleSuggestionInput(title, content) {
-    const normalizedTitle = String(title || "").trim();
-    const normalizedContent = String(content || "").trim();
-
-    if (!normalizedTitle && !normalizedContent) {
-        return "Please provide a title draft or note content.";
-    }
-
-    if (normalizedTitle.length > 50) {
-        return "Title draft is too long.";
-    }
-
-    if (normalizedContent.length > 5000) {
-        return "Content is too long.";
-    }
-
-    return null;
-}
-
-function validateContentSuggestionInput(title) {
-    const normalizedTitle = String(title || "").trim();
-
-    if (!normalizedTitle) {
-        return "Please provide a title first.";
-    }
-
-    if (normalizedTitle.length > 100) {
-        return "Title is too long.";
-    }
-
-    return null;
-}
-
 function logAiUsage({
     userId,
     action,
@@ -320,20 +226,6 @@ function logAiUsage({
             }
         }
     );
-}
-
-function validateCategoryName(name) {
-    const normalizedName = String(name || "").trim();
-
-    if (!normalizedName) {
-        return "Category name is required.";
-    }
-
-    if (normalizedName.length > 30) {
-        return "Category name cannot be longer than 30 characters.";
-    }
-
-    return null;
 }
 
 function generateShareCodeValue(length = 10) {
@@ -374,29 +266,40 @@ function consumeReservedShareCode(code) {
     reservedShareCodes.delete(String(code || "").trim().toUpperCase());
 }
 
-function validateShareCode(code) {
-    const normalizedCode = String(code || "").trim().toUpperCase();
+function getAccessibleNoteForUser(userId, noteId, callback) {
+    db.get("SELECT username FROM users WHERE id = ?", [userId], (userErr, currentUser) => {
+        if (userErr) {
+            callback(userErr);
+            return;
+        }
 
-    if (!normalizedCode) {
-        return null;
-    }
+        if (!currentUser) {
+            callback(null, { status: 404, error: "Current user not found" });
+            return;
+        }
 
-    if (!/^[A-Z2-9]{10}$/.test(normalizedCode)) {
-        return "Invalid share code.";
-    }
+        db.get("SELECT * FROM notes WHERE id = ?", [noteId], (noteErr, note) => {
+            if (noteErr) {
+                callback(noteErr);
+                return;
+            }
 
-    return null;
-}
+            if (!note) {
+                callback(null, { status: 404, error: "Note not found" });
+                return;
+            }
 
-function parseSharedUsers(value) {
-    return String(value || "")
-        .split(",")
-        .map((item) => item.trim())
-        .filter(Boolean);
-}
+            const sharedUsers = parseSharedUsers(note.shared_user);
+            const hasAccess = note.user_id === userId || sharedUsers.includes(currentUser.username);
 
-function buildSharedUsersValue(users) {
-    return Array.from(new Set(users.map((item) => String(item || "").trim()).filter(Boolean))).join(",");
+            if (!hasAccess) {
+                callback(null, { status: 403, error: "You do not have permission to view this note." });
+                return;
+            }
+
+            callback(null, { status: 200, note });
+        });
+    });
 }
 
 const db = new sqlite3.Database(dbPath, (err) => {
@@ -407,88 +310,98 @@ const db = new sqlite3.Database(dbPath, (err) => {
     }
 });
 
-db.run(`
-    CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        email TEXT NOT NULL UNIQUE,
-        username TEXT NOT NULL UNIQUE,
-        password TEXT NOT NULL,
-        categories TEXT DEFAULT '["None", "Personal", "Work", "Ideas", "Other"]',
-        friend_requests TEXT,
-        pending_request TEXT,
-        friends TEXT,
-        created_date TEXT DEFAULT (datetime('now'))
-    )
-`);
-
-db.run(`
-    CREATE TABLE IF NOT EXISTS notes (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER,
-        title TEXT NOT NULL,
-        content TEXT,
-        category TEXT,
-        color TEXT,
-        private BOOLEAN,
-        share_code TEXT UNIQUE,
-        shared_user TEXT,
-        created_date TEXT DEFAULT (datetime('now'))
-    )
-`);
-
-db.all("PRAGMA table_info(notes)", (err, columns) => {
-    if (err) {
-        return console.error("Notes schema read error: ", err.message);
-    }
-
-    const hasShareCodeColumn = columns.some((column) => column.name === "share_code");
-    const ensureShareCodeIndex = () => {
-        db.run("CREATE UNIQUE INDEX IF NOT EXISTS idx_notes_share_code ON notes(share_code)", (indexErr) => {
-            if (indexErr) {
-                console.error("Failed to create share_code index: ", indexErr.message);
+function runDb(dbInstance, sql, params = []) {
+    return new Promise((resolve, reject) => {
+        dbInstance.run(sql, params, function (err) {
+            if (err) {
+                reject(err);
+                return;
             }
-        });
-    };
 
-    if (hasShareCodeColumn) {
-        ensureShareCodeIndex();
-        return;
+            resolve(this);
+        });
+    });
+}
+
+function allDb(dbInstance, sql, params = []) {
+    return new Promise((resolve, reject) => {
+        dbInstance.all(sql, params, (err, rows) => {
+            if (err) {
+                reject(err);
+                return;
+            }
+
+            resolve(rows);
+        });
+    });
+}
+
+async function initializeDatabase() {
+    await runDb(db, `
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            email TEXT NOT NULL UNIQUE,
+            username TEXT NOT NULL UNIQUE,
+            password TEXT NOT NULL,
+            categories TEXT DEFAULT '["None", "Personal", "Work", "Ideas", "Other"]',
+            friend_requests TEXT,
+            pending_request TEXT,
+            friends TEXT,
+            created_date TEXT DEFAULT (datetime('now'))
+        )
+    `);
+
+    await runDb(db, `
+        CREATE TABLE IF NOT EXISTS notes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            title TEXT NOT NULL,
+            content TEXT,
+            category TEXT,
+            color TEXT,
+            private BOOLEAN,
+            share_code TEXT UNIQUE,
+            shared_user TEXT,
+            created_date TEXT DEFAULT (datetime('now'))
+        )
+    `);
+
+    const columns = await allDb(db, "PRAGMA table_info(notes)");
+    const hasShareCodeColumn = columns.some((column) => column.name === "share_code");
+
+    if (!hasShareCodeColumn) {
+        await runDb(db, "ALTER TABLE notes ADD COLUMN share_code TEXT");
     }
 
-    db.run("ALTER TABLE notes ADD COLUMN share_code TEXT", (alterErr) => {
-        if (alterErr) {
-            console.error("Failed to add share_code column: ", alterErr.message);
-            return;
-        }
+    await runDb(db, "CREATE UNIQUE INDEX IF NOT EXISTS idx_notes_share_code ON notes(share_code)");
 
-        ensureShareCodeIndex();
-    });
-});
+    await runDb(db, `
+        CREATE TABLE IF NOT EXISTS todos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            title TEXT NOT NULL,
+            isDone BOOLEAN,
+            created_date TEXT DEFAULT (datetime('now'))
+        )    
+    `);
 
-db.run(`
-    CREATE TABLE IF NOT EXISTS todos (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER,
-        title TEXT NOT NULL,
-        isDone BOOLEAN,
-        created_date TEXT DEFAULT (datetime('now'))
-    )    
-`);
+    await runDb(db, `
+        CREATE TABLE IF NOT EXISTS ai_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            action TEXT NOT NULL,
+            model TEXT NOT NULL,
+            input_tokens INTEGER DEFAULT 0,
+            output_tokens INTEGER DEFAULT 0,
+            total_tokens INTEGER DEFAULT 0,
+            success INTEGER DEFAULT 1,
+            error_message TEXT,
+            created_date TEXT DEFAULT (datetime('now'))
+        )    
+    `);
+}
 
-db.run(`
-    CREATE TABLE IF NOT EXISTS ai_logs (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER,
-        action TEXT NOT NULL,
-        model TEXT NOT NULL,
-        input_tokens INTEGER DEFAULT 0,
-        output_tokens INTEGER DEFAULT 0,
-        total_tokens INTEGER DEFAULT 0,
-        success INTEGER DEFAULT 1,
-        error_message TEXT,
-        created_date TEXT DEFAULT (datetime('now'))
-    )    
-`);
+const dbReady = initializeDatabase();
 
 app.set("trust proxy", 1);
 
@@ -510,6 +423,9 @@ app.use(session({
         maxAge: 1000 * 60 * 60 * 24
     }
 }));
+app.use((req, res, next) => {
+    dbReady.then(() => next()).catch(next);
+});
 
 const protectedPages = new Set([
     "/homepage.html",
@@ -523,6 +439,26 @@ const protectedPages = new Set([
 app.use((req, res, next) => {
     if (protectedPages.has(req.path) && !req.session.userId) {
         return res.redirect("/loginpage.html");
+    }
+
+    if (req.path === "/editnotepage.html") {
+        const parsedNoteId = parsePositiveInt(req.query?.id);
+
+        if (!parsedNoteId) {
+            return res.redirect("/homepage.html");
+        }
+
+        return getAccessibleNoteForUser(req.session.userId, parsedNoteId, (err, result) => {
+            if (err) {
+                return next(err);
+            }
+
+            if (result.status !== 200) {
+                return res.redirect("/homepage.html");
+            }
+
+            next();
+        });
     }
 
     next();
@@ -985,25 +921,16 @@ app.get("/edit-note/:id", requireAuth, (req, res) => {
         return res.status(400).json({ error: "Invalid note id" });
     }
 
-    db.get("SELECT username FROM users WHERE id = ?", [userId], function (userErr, currentUser) {
-        if (userErr) {
-            return res.status(500).json({ error: "Database error: " + userErr.message });
+    getAccessibleNoteForUser(userId, parsedNoteId, (err, result) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
         }
 
-        if (!currentUser) {
-            return res.status(404).json({ error: "Current user not found" });
+        if (result.status !== 200) {
+            return res.status(result.status).json({ error: result.error });
         }
 
-        db.all(
-            "SELECT * FROM notes WHERE id = ? AND (user_id = ? OR (shared_user IS NOT NULL AND shared_user != '' AND shared_user LIKE ?))",
-            [parsedNoteId, userId, `%${currentUser.username}%`],
-            function (err, rows) {
-                if (err) {
-                    return res.status(500).json({ error: err.message });
-                }
-                res.json(rows);
-            }
-        );
+        res.json([result.note]);
     });
 });
 
@@ -1578,6 +1505,32 @@ app.delete("/delete-category/:category_index", requireAuth, (req, res) => {
     });
 });
 
-app.listen(port, () => {
-    console.log(`Server is running on http://localhost:${port}`);
-});
+app.use(notFoundHandler);
+app.use(errorHandler);
+
+export { app, db, dbReady };
+
+export function closeDatabase() {
+    return new Promise((resolve, reject) => {
+        db.close((err) => {
+            if (err) {
+                reject(err);
+                return;
+            }
+
+            resolve();
+        });
+    });
+}
+
+function startServer() {
+    return app.listen(port, () => {
+        console.log(`Server is running on http://localhost:${port}`);
+    });
+}
+
+const isDirectExecution = process.argv[1] && path.resolve(process.argv[1]) === __filename;
+
+if (isDirectExecution) {
+    startServer();
+}
