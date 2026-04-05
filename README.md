@@ -2,6 +2,22 @@
 
 Smart Notes is a note-taking app built with Express, SQLite, and vanilla frontend files.
 
+## Tech stack & third-party resources
+
+This project uses the following libraries and platforms:
+
+- Node.js + npm
+- Express.js for the server
+- SQLite via the `sqlite3` package for local data storage
+- `express-session` for session management
+- `bcrypt` for password hashing
+- `cors` for handling cross-origin requests
+- `dotenv` for environment variable loading
+- OpenAI API via the `openai` package for optional title/content suggestions
+- Docker for containerized deployment
+- Docker Compose for local container orchestration
+- GitHub Actions for CI
+
 ## Requirements
 
 - Node.js 22

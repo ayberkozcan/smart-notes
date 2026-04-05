@@ -23,7 +23,7 @@ async function fetchJson(url, options = {}) {
 function renderCategories() {
     categoryCards.innerHTML = "";
 
-    fetchJson("http://localhost:3000/categories")
+    fetchJson("/categories")
         .then(categories => {
             categories.forEach((item, i) => {
                 const category = document.createElement("div");
@@ -59,7 +59,7 @@ function renderCategories() {
                     }
 
                     if (newName.trim() !== item) {
-                        fetchJson(`http://localhost:3000/edit-category`, {
+                        fetchJson(`/edit-category`, {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
                             body: JSON.stringify({ category_index: i, newName: newName.trim() })
@@ -81,7 +81,7 @@ function renderCategories() {
                     const confirmation = window.confirm("Are you sure you want to delete this category?");
                     
                     if (confirmation) {
-                        fetchJson(`http://localhost:3000/delete-category/${i}`, { method: "DELETE" })
+                        fetchJson(`/delete-category/${i}`, { method: "DELETE" })
                         .then((data) => {
                             alert(data.message);
                             renderCategories();
@@ -114,7 +114,7 @@ document.getElementById("addCategory").addEventListener("click", function (e) {
         alert("Category name cannot be longer than 15 characters");
     } else {
         if (name && name.trim() !== "") {
-            fetchJson(`http://localhost:3000/add-category`, {
+            fetchJson(`/add-category`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ name: name.trim() })

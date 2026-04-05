@@ -162,8 +162,13 @@ document.getElementById("searchInput").addEventListener("input", function () {
     drawNotes(displayedNotes);
 });
 
-async function fetchJson(url, options = {}) {
-    const response = await fetch(url, options);
+const API_BASE_URL =
+  location.hostname === "localhost"
+    ? "http://localhost:3000"
+    : "";
+
+async function fetchJson(path, options = {}) {
+    const response = await fetch(`${API_BASE_URL}${path}`, options);
 
     if (response.status === 401) {
         localStorage.setItem("isVerified", "false");
@@ -192,7 +197,7 @@ async function submitSharedCode() {
     }
 
     try {
-        const data = await fetchJson("http://localhost:3000/accept-share-code", {
+        const data = await fetchJson("/accept-share-code", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -230,7 +235,7 @@ function renderNotes() {
         }
     }
     
-    fetchJson(`http://localhost:3000/${path}`)
+    fetchJson(`/${path}`)
         .then(notes => {
             notesData = notes;
             displayedNotes = [...notesData];
@@ -322,7 +327,7 @@ function drawNotes(notes) {
                 deleteNoteBtn.addEventListener("click", function() {
                     const confirmation = window.confirm("Are you sure you want to delete this note?");
                     if (confirmation) {
-                        fetchJson(`http://localhost:3000/delete-note/${item.id}`, { method: "DELETE" })
+                        fetchJson(`/delete-note/${item.id}`, { method: "DELETE" })
                             .then(() => {
                                 alert("Note deleted.");
                                 renderNotes();
@@ -503,7 +508,7 @@ renderToDos();
 function renderToDos() {
     todoContent.innerHTML = "";
 
-    fetchJson(`http://localhost:3000/todos`)
+    fetchJson(`/todos`)
         .then(todos => {
             todosData = todos;
             displayedTodos = [...todosData];
@@ -550,7 +555,7 @@ function drawTodos(todos) {
                 const isChecked = checkbox.checked;
                 span.classList.toggle("line-through", isChecked);
 
-                fetch(`http://localhost:3000/task-toggle/${item.id}`, {
+                fetch(`/task-toggle/${item.id}`, {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json"
@@ -586,7 +591,7 @@ function drawTodos(todos) {
 
             const deleteTodoBtn = row.querySelector(".deleteTodoBtn");
             deleteTodoBtn.addEventListener("click", function() {
-                fetchJson(`http://localhost:3000/delete-todo/${item.id}`, { method: "DELETE" })
+                fetchJson(`/delete-todo/${item.id}`, { method: "DELETE" })
                     .then(() => {
                         renderToDos();
                     })
@@ -625,7 +630,7 @@ document.getElementById("addTodo").addEventListener("click", function (e) {
             alert("Task cannot be longer than 50 characters");
         } else {
             if (title && title.trim() !== "") {
-                fetchJson(`http://localhost:3000/add-todo`, {
+                fetchJson(`/add-todo`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ title: title.trim() })
@@ -670,7 +675,7 @@ logoutBtn.addEventListener("click", function(e) {
     localStorage.removeItem('userData');
     sessionStorage.removeItem("welcomeShown");
 
-    fetch("http://localhost:3000/logout", {
+    fetch("/logout", {
         method: "POST"
     })
     .catch(err => console.error("Logout error:", err))

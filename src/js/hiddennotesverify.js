@@ -26,7 +26,7 @@ async function verifyInput() {
     const passwordValue = password.value.trim();
 
     try {
-        const data = await fetchJson("http://localhost:3000/password-validation", {
+        const data = await fetchJson("/password-validation", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"

@@ -107,7 +107,7 @@ async function fetchJson(url, options = {}) {
 }
 
 async function handleLogin() {
-    const data = await fetchJson("http://localhost:3000/login", {
+    const data = await fetchJson("/login", {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
@@ -140,7 +140,7 @@ async function handleLogin() {
 }
 
 async function handleSignup() {
-    const data = await fetchJson("http://localhost:3000/signup", {
+    const data = await fetchJson("/signup", {
         method: "POST",
         headers: {
             "Content-Type": "application/json"

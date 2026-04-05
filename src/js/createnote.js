@@ -89,7 +89,7 @@ function renderTitleSuggestions(suggestions) {
 function renderCategories() {
     categoriesSelectBox.innerHTML = "";
 
-    fetchJson("http://localhost:3000/get-categories")
+    fetchJson("/get-categories")
         .then(categories => {
             categories.forEach((item, index) => {
                 const option = document.createElement("option");
@@ -109,13 +109,13 @@ renderCategories();
 
 function renderInfo() {
     
-    fetchJson("http://localhost:3000/get-note-count")
+    fetchJson("/get-note-count")
         .then(count => {
             noteCount.innerHTML = count["COUNT(id)"];
         })
         .catch(err => console.error("Error fetching note count:", err));
 
-    fetchJson("http://localhost:3000/get-fav-category")
+    fetchJson("/get-fav-category")
         .then(category => {
             favCategory.innerHTML = category["MAX(category)"] || "None";
         })   
@@ -161,7 +161,7 @@ suggestTitleBtn.addEventListener("click", async function () {
         suggestTitleBtn.disabled = true;
         suggestTitleBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Thinking`;
 
-        const data = await fetchJson("http://localhost:3000/ai/suggest-title", {
+        const data = await fetchJson("/ai/suggest-title", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -192,7 +192,7 @@ suggestContentBtn.addEventListener("click", async function () {
         suggestContentBtn.disabled = true;
         suggestContentBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Thinking`;
 
-        const data = await fetchJson("http://localhost:3000/ai/suggest-content", {
+        const data = await fetchJson("/ai/suggest-content", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -260,7 +260,7 @@ function resetShareState() {
 }
 
 async function createShareCode() {
-    const data = await fetchJson("http://localhost:3000/generate-share-code", {
+    const data = await fetchJson("/generate-share-code", {
         method: "POST"
     });
 
@@ -399,7 +399,7 @@ form.addEventListener("submit", async function(e) {
             noteData.shareCode = shareCode.value.trim();
         }
 
-        fetchJson(`http://localhost:3000/${path}`, {
+        fetchJson(`/${path}`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"

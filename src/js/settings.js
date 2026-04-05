@@ -72,7 +72,7 @@ document.getElementById("deleteDataBtn").addEventListener("click", function () {
         return;
     }
 
-    fetchJson("http://localhost:3000/password-validation", {
+    fetchJson("/password-validation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ password: trimmedPassword })
@@ -82,7 +82,7 @@ document.getElementById("deleteDataBtn").addEventListener("click", function () {
             const confirmation = window.confirm("Are you sure you want to delete your all notes?\nThis action cannot be undone.");
         
             if (confirmation) {
-                fetchJson("http://localhost:3000/delete-all-data", { method: "DELETE" })
+                fetchJson("/delete-all-data", { method: "DELETE" })
                     .then((deleteData) => {
                         alert(deleteData.message || "All notes deleted.");
                     })
