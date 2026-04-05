@@ -92,7 +92,7 @@ function renderTitleSuggestions(suggestions) {
 function renderCategories() {
     categoriesSelectBox.innerHTML = "";
 
-    fetchJson("/get-categories")
+    return fetchJson("/get-categories")
         .then(categories => {
             categories.forEach((item) => {
                 const option = document.createElement("option");
@@ -100,11 +100,12 @@ function renderCategories() {
                 option.textContent = item;
                 categoriesSelectBox.appendChild(option);
             });
-        })
-        .catch(err => console.error("Error fetching categories:", err));
+        });
 }
 
-renderCategories();
+renderCategories()
+    .then(getNote)
+    .catch(err => console.error("Error loading categories or note:", err));
 
 function renderInfo() {
     
@@ -126,6 +127,12 @@ renderInfo();
 function getNote() {
     const id = noteId;
 
+    if (!id) {
+        alert("Note not found.");
+        window.location.href = "homepage.html";
+        return;
+    }
+
     fetchJson(`/edit-note/${id}`)
         .then(data => {
             if (data.length > 0) {
@@ -140,9 +147,29 @@ function getNote() {
 
                 checkbox.checked = note.private ? true : false;
                 updatePreviewVisibilityBadge();
-                categoriesSelectBox.value = note.category;
-                color.value = note.color;
-                previewCategory.innerHTML = note.category;
+
+                const requestedCategory = String(note.category || "").trim();
+                const matchingCategoryOption = Array.from(categoriesSelectBox.options)
+                    .find(option => option.value.toLowerCase() === requestedCategory.toLowerCase());
+
+                if (matchingCategoryOption) {
+                    categoriesSelectBox.value = matchingCategoryOption.value;
+                } else if (requestedCategory) {
+                    const option = document.createElement("option");
+                    option.value = requestedCategory;
+                    option.textContent = requestedCategory;
+                    categoriesSelectBox.appendChild(option);
+                    categoriesSelectBox.value = requestedCategory;
+                }
+
+                const requestedColor = String(note.color || "Ivory").trim();
+                const matchingColorOption = Array.from(color.options)
+                    .find(option => option.value.toLowerCase() === requestedColor.toLowerCase());
+
+                color.value = matchingColorOption ? matchingColorOption.value : "Ivory";
+
+                previewCategory.innerHTML = requestedCategory || "None";
+
                 if (note.share_code) {
                     shareEnabled = true;
                     inputShare.style.display = "block";
@@ -151,9 +178,10 @@ function getNote() {
                     copyShareCodeBtn.disabled = false;
                     buttonShare.classList.add("active");
                 }
-                
-                changeColor(color.options[color.selectedIndex].text);
-                syncColorPalette(color.options[color.selectedIndex].text);
+
+                const selectedColorText = color.options[color.selectedIndex]?.text || "Ivory";
+                changeColor(selectedColorText);
+                syncColorPalette(selectedColorText);
                 updatePreviewVisibilityBadge();
             } else {
                 alert("Note cannot be found.");
@@ -166,8 +194,6 @@ function getNote() {
             window.location.href = "homepage.html";
         });
 }
-
-getNote();
 
 function error(input, message) {
     input.classList.add("is-invalid");
