@@ -50,10 +50,16 @@
                         </div>
                         
                         <div class="form-group">
-                            <label for="content" class="editor-label">Content</label>
-                            <textarea class="note-control editor-control editor-control--textarea" id="content" rows="10" maxlength="600"></textarea>
+                            <div class="editor-label-row">
+                                <label for="content" class="editor-label">Content</label>
+                                <button type="button" class="btn btn-outline-secondary editor-ai-btn" id="suggestContentBtn">
+                                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                                    Suggest Content
+                                </button>
+                            </div>
+                            <textarea class="note-control editor-control editor-control--textarea" id="content" rows="10" maxlength="2000"></textarea>
                         </div>
-                        
+
                         <div class="editor-stats">
                             <p id="content-length">0 characters</p>
                             <p id="content-words">0 words</p>

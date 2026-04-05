@@ -269,6 +269,20 @@ function validateTitleSuggestionInput(title, content) {
     return null;
 }
 
+function validateContentSuggestionInput(title) {
+    const normalizedTitle = String(title || "").trim();
+
+    if (!normalizedTitle) {
+        return "Please provide a title first.";
+    }
+
+    if (normalizedTitle.length > 100) {
+        return "Title is too long.";
+    }
+
+    return null;
+}
+
 function logAiUsage({
     userId,
     action,
@@ -741,6 +755,96 @@ app.post("/ai/suggest-title", requireAuth, aiRateLimiter, async (req, res) => {
         });
 
         res.status(500).json({ error: "Failed to generate title suggestions." });
+    }
+});
+
+app.post("/ai/suggest-content", requireAuth, aiRateLimiter, async (req, res) => {
+    if (!openaiClient) {
+        return res.status(500).json({ error: "OPENAI_API_KEY is not configured." });
+    }
+
+    const title = String(req.body?.title || "").trim();
+    const content = String(req.body?.content || "").trim();
+
+    const validationError = validateContentSuggestionInput(title);
+    if (validationError) {
+        return res.status(400).json({ error: validationError });
+    }
+
+    try {
+        const response = await openaiClient.responses.create({
+            model: aiModel,
+            input: [
+                {
+                    role: "system",
+                    content: [
+                        {
+                            type: "input_text",
+                            text: "You help improve note content. If the note content is empty, write a short natural note body based on the title. If the note content already exists, improve it by fixing spelling, grammar, and clarity while preserving the original meaning. Return only one plain text result between 100 and 200 characters. Do not use markdown, bullet points, numbering, or quotation marks."
+                        }
+                    ]
+                },
+                {
+                    role: "user",
+                    content: [
+                        {
+                            type: "input_text",
+                            text: `Title: ${title}\n\nExisting content:\n${content || "(empty)"}`
+                        }
+                    ]
+                }
+            ]
+        });
+
+        const usage = response.usage || {};
+        const inputTokens = usage.input_tokens || 0;
+        const outputTokens = usage.output_tokens || 0;
+        const totalTokens = usage.total_tokens || 0;
+
+        const contentSuggestion = String(response.output_text || "").trim();
+
+        if (!contentSuggestion) {
+            logAiUsage({
+                userId: req.session.userId,
+                action: "suggest-content",
+                model: aiModel,
+                inputTokens,
+                outputTokens,
+                totalTokens,
+                success: 0,
+                errorMessage: "No content suggestion was generated."
+            });
+        
+            return res.status(500).json({ error: "No content suggestion was generated." });
+        }
+
+        logAiUsage({
+            userId: req.session.userId,
+            action: "suggest-content",
+            model: aiModel,
+            inputTokens,
+            outputTokens,
+            totalTokens,
+            success: 1,
+            errorMessage: null
+        });
+
+        res.json({ content: contentSuggestion });
+    } catch (error) {
+        console.error("AI content suggestion error:", error);
+
+        logAiUsage({
+            userId: req.session.userId,
+            action: "suggest-content",
+            model: aiModel,
+            inputTokens: 0,
+            outputTokens: 0,
+            totalTokens: 0,
+            success: 0,
+            errorMessage: error.message || "Unknown AI error"
+        });
+
+        res.status(500).json({ error: "Failed to generate content suggestion." });
     }
 });
 

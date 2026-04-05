@@ -15,6 +15,14 @@ const previewHidden = document.getElementById("preview-hidden");
 const suggestTitleBtn = document.getElementById("suggestTitleBtn");
 const titleSuggestionsBox = document.getElementById("titleSuggestionsBox");
 const titleSuggestionsList = document.getElementById("titleSuggestionsList");
+const suggestContentBtn = document.getElementById("suggestContentBtn");
+
+function updateSuggestContentButton() {
+    const hasContent = content.value.trim().length > 0;
+    suggestContentBtn.innerHTML = hasContent
+        ? `<i class="fa-solid fa-wand-magic-sparkles"></i> Improve Content`
+        : `<i class="fa-solid fa-wand-magic-sparkles"></i> Suggest Content`;
+}
 
 const urlParams = new URLSearchParams(window.location.search);
 const noteId = urlParams.get("id");
@@ -121,6 +129,7 @@ function getNote() {
 
                 content.value = note.content;
                 loadContent();
+                updateSuggestContentButton();
 
                 checkbox.checked = note.private ? true : false;
                 updatePreviewVisibilityBadge();
@@ -201,8 +210,42 @@ suggestTitleBtn.addEventListener("click", async function () {
     }
 });
 
+suggestContentBtn.addEventListener("click", async function () {
+    if (!title.value.trim()) {
+        alert("Please write a title first.");
+        return;
+    }
+
+    try {
+        suggestContentBtn.disabled = true;
+        suggestContentBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Thinking`;
+
+        const data = await fetchJson("http://localhost:3000/ai/suggest-content", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                title: title.value.trim(),
+                content: content.value.trim()
+            })
+        });
+
+        content.value = data.content || "";
+        loadContent();
+        updateSuggestContentButton();
+    } catch (error) {
+        console.error("AI content suggestion error:", error);
+        alert(error.message);
+    } finally {
+        suggestContentBtn.disabled = false;
+        updateSuggestContentButton();
+    }
+});
+
 content.addEventListener("input", function () {
     loadContent();
+    updateSuggestContentButton();
 });
 
 function loadContent() {
