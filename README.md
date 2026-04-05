@@ -2,27 +2,7 @@
 
 A lightweight note-taking application built with Express, SQLite, and vanilla frontend technologies.
 
-<<<<<<< HEAD
-## Tech stack & third-party resources
-
-This project uses the following libraries and platforms:
-
-- Node.js + npm
-- Express.js for the server
-- SQLite via the `sqlite3` package for local data storage
-- `express-session` for session management
-- `bcrypt` for password hashing
-- `cors` for handling cross-origin requests
-- `dotenv` for environment variable loading
-- OpenAI API via the `openai` package for optional title/content suggestions
-- Docker for containerized deployment
-- Docker Compose for local container orchestration
-- GitHub Actions for CI
-
-## Requirements
-=======
 It allows users to create, edit, and organize notes with optional AI-powered suggestions, along with a simple authentication system and a containerized local development setup.
->>>>>>> 1bc32870649b0a917d3edfc75ba577ad5d75be88
 
 ## Preview
 
