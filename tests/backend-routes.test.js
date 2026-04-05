@@ -83,6 +83,14 @@ test("GET /notes returns 401 without session", async () => {
     assert.deepEqual(body, { error: "Unauthorized" });
 });
 
+test("GET /health returns ok", async () => {
+    const response = await request("/health");
+    const body = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(body, { ok: true });
+});
+
 test("POST /signup validates auth payload", async () => {
     const response = await request("/signup", {
         method: "POST",

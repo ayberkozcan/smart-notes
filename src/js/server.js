@@ -26,7 +26,7 @@ import {
 import { errorHandler, notFoundHandler } from './backend/http.js';
 
 const app = express();
-const port = 3000;
+const port = Number.parseInt(process.env.PORT || "3000", 10);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectSrcDir = path.resolve(__dirname, "..");
@@ -468,6 +468,10 @@ app.use(express.static(projectSrcDir));
 
 app.get("/", (req, res) => {
     res.sendFile(path.join(projectSrcDir, "loginpage.html"));
+});
+
+app.get("/health", (req, res) => {
+    res.json({ ok: true });
 });
 
 function requireAuth(req, res, next) {
