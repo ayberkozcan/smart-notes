@@ -15,6 +15,12 @@ It allows users to create, edit, and organize notes with optional AI-powered sug
 ### Create Note Page
 <img width="1844" height="952" alt="createnote" src="https://github.com/user-attachments/assets/12bc48a0-614e-4d92-9317-db2dce266ba2" />
 
+## Live Demo
+
+You can try the live version of the application here:
+
+👉 https://smart-notes-luem.onrender.com
+
 ## Features
 
 - User authentication with signup and login
